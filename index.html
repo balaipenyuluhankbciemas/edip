@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDIP-Laporan MDK</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tom Select for Searchable Dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS (xlsx) for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- iziToast for Notifications -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <style>
+        /* Custom font and minor style adjustments */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
+        body { font-family: 'Roboto', sans-serif; }
+        .btn-disabled { cursor: not-allowed; background-color: #9ca3af; }
+        .btn-disabled:hover { background-color: #9ca3af; }
+        select:disabled, input:disabled { background-color: #f3f4f6; color: #6b7280; }
+        .edit-input { width: 100%; padding: 4px 8px; border-radius: 6px; border: 1px solid #d1d5db; -moz-appearance: textfield; }
+        .edit-input::-webkit-outer-spin-button, .edit-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .table-container { min-height: 400px; }
+        th { white-space: nowrap; }
+        .calculated-cell { font-weight: bold; background-color: #f9fafb; }
+        /* Dropdown styles */
+        .dropdown:hover .dropdown-menu { display: block; }
+        .dropdown-menu { display: none; }
+        /* MDB-like button and input focus */
+        .mdb-btn {
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 9px -4px rgba(0, 0, 0, 0.35);
+            transition: all 0.15s ease-in-out;
+        }
+        .mdb-btn:hover {
+            box-shadow: 0 8px 9px -4px rgba(0, 0, 0, 0.2), 0 4px 18px 0 rgba(0, 0, 0, 0.15);
+        }
+        .mdb-btn:active {
+            box-shadow: 0 5px 5px -3px rgba(0,0,0,0.2), 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12);
+            transform: translateY(1px);
+        }
+        /* Ripple Effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.7);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+        }
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        /* Text button effect */
+        .text-btn {
+            transition: transform 0.1s ease-out;
+        }
+        .text-btn:active {
+            transform: scale(0.92);
+        }
+        /* Tom Select custom styling to match theme */
+        .ts-control {
+            border-radius: 0.375rem;
+            border-color: #d1d5db;
+        }
+        .ts-dropdown {
+            z-index: 20;
+            background-color: white;
+        }
+        .ts-control.focus {
+            border-color: #3b71ca;
+            box-shadow: 0 0 0 3px rgba(59, 113, 202, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <div class="max-w-screen-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+            <!-- Header Section -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-4 border-b">
+                 <h1 class="text-2xl font-bold text-gray-800">EDIP-Laporan MDK</h1>
+                 <!-- Dropdown Button for Export/Share -->
+                 <div class="relative dropdown mt-3 sm:mt-0">
+                    <button id="export-dropdown-btn" class="w-full sm:w-auto bg-[#3b71ca] text-white font-semibold py-2.5 px-6 rounded-lg mdb-btn btn-disabled" disabled>
+                        Ekspor / Bagikan &#9662;
+                    </button>
+                    <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20">
+                        <a href="#" id="export-excel-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke Excel</a>
+                        <a href="#" id="export-pdf-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke PDF</a>
+                        <a href="#" id="export-word-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke Word</a>
+                        <a href="#" id="share-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Bagikan File...</a>
+                    </div>
+                </div>
+            </div>
+            
+             <!-- Controls Section -->
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Filter Data</h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label for="filter-kelurahan" class="block text-sm font-medium text-gray-700">Filter Desa</label>
+                        <select id="filter-kelurahan" placeholder="Cari Desa..."></select>
+                    </div>
+                    <div>
+                        <label for="filter-bulan" class="block text-sm font-medium text-gray-700">Filter Bulan</label>
+                        <select id="filter-bulan" placeholder="Cari Bulan..."></select>
+                    </div>
+                    <div>
+                        <label for="filter-tahun" class="block text-sm font-medium text-gray-700">Filter Tahun</label>
+                         <input type="number" id="filter-tahun" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50" placeholder="Semua Tahun">
+                    </div>
+                    <div class="self-end">
+                        <button id="reset-filter-btn" class="w-full bg-gray-500 text-white font-semibold py-2.5 px-4 rounded-lg mdb-btn">
+                            Reset Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Section -->
+            <div class="overflow-x-auto table-container">
+                <table id="main-table" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desa/Kelurahan</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama RW</th>
+                            <!-- Kelompok KS -->
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pra-KS</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS I</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS II</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS III</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS III+</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">JUMLAH TAHAPAN KS</th>
+                            <!-- Peristiwa per Gender -->
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lahir(L)</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lahir(P)</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masuk(L)</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masuk(P)</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pindah(L)</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pindah(P)</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meninggal(L)</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meninggal(P)</th>
+                             <!-- Kelompok Peristiwa (Dipindahkan) -->
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lahir</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masuk</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pindah</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meninggal</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Menikah</th>
+                            <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Data rows will be dynamically inserted here by Firebase -->
+                    </tbody>
+                </table>
+                 <div id="loading-indicator" class="w-full text-center py-8 text-gray-500">Memuat data...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button id="add-row-btn" class="fixed bottom-8 right-8 bg-[#3b71ca] text-white w-16 h-16 rounded-full flex items-center justify-center text-4xl mdb-btn z-10">
+        +
+    </button>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Configuration ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const kelurahanList = ["CIEMAS", "CIBENDA", "CIWARU", "MEKARJAYA", "GIRIMUKTI", "TAMANJAYA", "MANDRAJAYA", "SIDAMULYA", "MEKARSAKTI"];
+        const bulanList = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        const ksKeys = ['pra_ks', 'ks_i', 'ks_ii', 'ks_iii', 'ks_iii_plus'];
+        const eventKeys = ['menikah'];
+        const genderEventKeys = ['lahir_laki', 'lahir_perempuan', 'masuk_laki', 'masuk_perempuan', 'pindah_laki', 'pindah_perempuan', 'meninggal_laki', 'meninggal_perempuan'];
+        
+        // --- DOM Elements ---
+        const previewBody = document.getElementById('preview-body');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const filterKelurahanSelect = document.getElementById('filter-kelurahan');
+        const filterBulanSelect = document.getElementById('filter-bulan');
+        const filterTahunInput = document.getElementById('filter-tahun');
+        const resetFilterBtn = document.getElementById('reset-filter-btn');
+        const addRowBtn = document.getElementById('add-row-btn');
+        const exportDropdownBtn = document.getElementById('export-dropdown-btn');
+        const exportExcelBtn = document.getElementById('export-excel-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const exportWordBtn = document.getElementById('export-word-btn');
+        const shareBtn = document.getElementById('share-btn');
+
+        let db, auth, userId, collectionRef;
+        let unsubscribe = () => {};
+        let tomSelectDesa, tomSelectBulan;
+
+        // --- Helper Functions ---
+        const showStatus = (message, isError = false) => {
+            const config = {
+                title: isError ? 'Gagal' : 'Sukses',
+                message: message,
+                position: 'bottomCenter', // Changed position
+                timeout: 4000,
+                progressBarColor: isError ? 'rgb(220, 53, 69)' : 'rgb(25, 135, 84)',
+            };
+
+            if (isError) {
+                iziToast.error(config);
+            } else {
+                iziToast.success(config);
+            }
+        };
+
+        const calculateTotalsInRow = (row) => {
+            const ksInputs = row.querySelectorAll('.ks-edit-input');
+            const totalKs = Array.from(ksInputs).reduce((sum, input) => sum + (Number(input.value) || 0), 0);
+            row.querySelector('.total-ks-cell').textContent = totalKs;
+            
+            const totalLahir = (Number(row.querySelector('[data-key="lahir_laki"]').value) || 0) + (Number(row.querySelector('[data-key="lahir_perempuan"]').value) || 0);
+            const totalMasuk = (Number(row.querySelector('[data-key="masuk_laki"]').value) || 0) + (Number(row.querySelector('[data-key="masuk_perempuan"]').value) || 0);
+            const totalPindah = (Number(row.querySelector('[data-key="pindah_laki"]').value) || 0) + (Number(row.querySelector('[data-key="pindah_perempuan"]').value) || 0);
+            const totalMeninggal = (Number(row.querySelector('[data-key="meninggal_laki"]').value) || 0) + (Number(row.querySelector('[data-key="meninggal_perempuan"]').value) || 0);
+            
+            row.querySelector('.total-lahir-cell').textContent = totalLahir;
+            row.querySelector('.total-masuk-cell').textContent = totalMasuk;
+            row.querySelector('.total-pindah-cell').textContent = totalPindah;
+            row.querySelector('.total-meninggal-cell').textContent = totalMeninggal;
+        };
+
+        const generateRowHTML = (docData, docId) => {
+            const totalKs = ksKeys.reduce((s, k) => s + (Number(docData[k]) || 0), 0);
+            const totalLahir = (Number(docData.lahir_laki) || 0) + (Number(docData.lahir_perempuan) || 0);
+            const totalMasuk = (Number(docData.masuk_laki) || 0) + (Number(docData.masuk_perempuan) || 0);
+            const totalPindah = (Number(docData.pindah_laki) || 0) + (Number(docData.pindah_perempuan) || 0);
+            const totalMeninggal = (Number(docData.meninggal_laki) || 0) + (Number(docData.meninggal_perempuan) || 0);
+
+            return `
+                <td class="px-2 py-2 text-sm">${docData.kelurahan || ''}</td>
+                <td class="px-2 py-2 text-sm">${docData.nama_rw || ''}</td>
+                ${ksKeys.map(key => `<td class="px-2 py-2 text-sm text-center">${docData[key] || 0}</td>`).join('')}
+                <td class="px-2 py-2 text-sm font-bold text-center">${totalKs}</td>
+                ${genderEventKeys.map(key => `<td class="px-2 py-2 text-sm text-center">${docData[key] || 0}</td>`).join('')}
+                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalLahir}</td>
+                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalMasuk}</td>
+                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalPindah}</td>
+                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalMeninggal}</td>
+                <td class="px-2 py-2 text-sm text-center">${docData.menikah || 0}</td>
+                <td class="px-2 py-2 text-center text-sm">
+                    <button class="edit-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${docId}">Edit</button>
+                    <button class="delete-btn text-btn text-red-600 hover:text-red-900" data-id="${docId}">Hapus</button>
+                </td>
+            `;
+        }
+
+        const generateEditRowHTML = (docData = {}, isNew = false) => {
+            const allKeys = [...ksKeys, ...eventKeys, ...genderEventKeys];
+            const data = { kelurahan: '', nama_rw: '', ...Object.fromEntries(allKeys.map(k => [k, 0])), ...docData };
+            
+            const totalKs = ksKeys.reduce((s, k) => s + (Number(data[k]) || 0), 0);
+            const totalLahir = (Number(data.lahir_laki) || 0) + (Number(data.lahir_perempuan) || 0);
+            const totalMasuk = (Number(data.masuk_laki) || 0) + (Number(data.masuk_perempuan) || 0);
+            const totalPindah = (Number(data.pindah_laki) || 0) + (Number(data.pindah_perempuan) || 0);
+            const totalMeninggal = (Number(data.meninggal_laki) || 0) + (Number(data.meninggal_perempuan) || 0);
+            
+            return `
+                <td class="px-2 py-1"><select class="edit-input kelurahan-edit-input">${kelurahanList.map(k => `<option value="${k}" ${k === data.kelurahan ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
+                <td class="px-2 py-1"><input type="text" class="edit-input nama-rw-edit-input" value="${data.nama_rw}" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="000"></td>
+                ${ksKeys.map(key => `<td class="px-2 py-1"><input type="number" class="edit-input ks-edit-input" data-key="${key}" value="${data[key] || 0}"></td>`).join('')}
+                <td class="px-2 py-1 text-sm font-bold text-center total-ks-cell">${totalKs}</td>
+                ${genderEventKeys.map(key => `<td class="px-2 py-1"><input type="number" class="edit-input gender-event-input" data-key="${key}" value="${data[key] || 0}"></td>`).join('')}
+                <td class="px-2 py-1 text-sm text-center calculated-cell total-lahir-cell">${totalLahir}</td>
+                <td class="px-2 py-1 text-sm text-center calculated-cell total-masuk-cell">${totalMasuk}</td>
+                <td class="px-2 py-1 text-sm text-center calculated-cell total-pindah-cell">${totalPindah}</td>
+                <td class="px-2 py-1 text-sm text-center calculated-cell total-meninggal-cell">${totalMeninggal}</td>
+                <td class="px-2 py-1"><input type="number" class="edit-input" data-key="menikah" value="${data.menikah || 0}"></td>
+                <td class="px-2 py-1 text-center">
+                    <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2">${isNew ? 'Tambah' : 'Simpan'}</button>
+                    <button class="cancel-btn text-btn text-gray-600 hover:text-gray-900">Batal</button>
+                </td>
+            `;
+        };
+
+        function getVisibleTableData() {
+            const headers = Array.from(document.querySelectorAll('#main-table thead th'))
+                .map(th => th.textContent)
+                .slice(0, -1); // Exclude "Aksi" column
+
+            const rows = [];
+            previewBody.querySelectorAll('tr').forEach(row => {
+                if (row.dataset.originalData && row.children.length > 1) {
+                    const cells = Array.from(row.querySelectorAll('td'));
+                    rows.push(cells.slice(0, -1).map(cell => cell.textContent));
+                }
+            });
+
+            return { headers, rows };
+        }
+
+        // --- Firestore Core Logic ---
+        function fetchAndRenderData() {
+            if (!collectionRef) return;
+            unsubscribe(); 
+
+            loadingIndicator.style.display = 'block';
+            previewBody.innerHTML = '';
+            
+            const filters = [];
+            if (tomSelectDesa && tomSelectDesa.getValue()) filters.push(where("kelurahan", "==", tomSelectDesa.getValue()));
+            if (tomSelectBulan && tomSelectBulan.getValue()) filters.push(where("bulan", "==", tomSelectBulan.getValue()));
+            if (filterTahunInput.value) filters.push(where("tahun", "==", Number(filterTahunInput.value)));
+
+            const q = query(collectionRef, ...filters);
+
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                loadingIndicator.style.display = 'none';
+                if (snapshot.empty) {
+                    previewBody.innerHTML = `<tr><td colspan="22" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
+                } else {
+                    const rowsHtml = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        const row = document.createElement('tr');
+                        row.dataset.id = doc.id;
+                        row.dataset.originalData = JSON.stringify(data);
+                        row.innerHTML = generateRowHTML(data, doc.id);
+                        return row.outerHTML;
+                    }).join('');
+                    previewBody.innerHTML = rowsHtml;
+                }
+                exportDropdownBtn.disabled = snapshot.empty;
+                exportDropdownBtn.classList.toggle('btn-disabled', snapshot.empty);
+
+            }, (error) => {
+                console.error("Error fetching data: ", error);
+                loadingIndicator.textContent = "Gagal memuat data.";
+                showStatus("Gagal memuat data: " + error.message, true);
+            });
+        }
+        
+        // --- Event Listeners ---
+        previewBody.addEventListener('click', async (e) => {
+            const target = e.target;
+            const row = target.closest('tr');
+            if (!row) return;
+
+            const docId = row.dataset.id;
+            
+            if (target.classList.contains('edit-btn')) {
+                const originalData = JSON.parse(row.dataset.originalData || '{}');
+                row.innerHTML = generateEditRowHTML(originalData, false);
+            }
+
+            if (target.classList.contains('delete-btn')) {
+                iziToast.question({
+                    timeout: 20000,
+                    close: false,
+                    overlay: true,
+                    displayMode: 'once',
+                    id: 'question',
+                    zindex: 999,
+                    title: 'Konfirmasi',
+                    message: 'Anda yakin ingin menghapus baris ini?',
+                    position: 'center',
+                    buttons: [
+                        ['<button><b>YA</b></button>', async function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            try {
+                                await deleteDoc(doc(db, collectionRef.path, docId));
+                                showStatus("Data berhasil dihapus.", false);
+                            } catch(error) {
+                                console.error("Error deleting document: ", error);
+                                showStatus("Gagal menghapus data.", true);
+                            }
+                        }, true],
+                        ['<button>TIDAK</button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        }],
+                    ]
+                });
+            }
+            
+            if(target.classList.contains('cancel-btn')) {
+                if (row.dataset.isNew) {
+                    row.remove();
+                } else {
+                    const originalData = JSON.parse(row.dataset.originalData);
+                    row.innerHTML = generateRowHTML(originalData, docId);
+                }
+            }
+
+            if (target.classList.contains('save-btn')) {
+                const isNew = row.dataset.isNew === 'true';
+                const originalData = isNew ? {} : JSON.parse(row.dataset.originalData);
+
+                const dataPayload = {
+                    kelurahan: row.querySelector('.kelurahan-edit-input').value,
+                    nama_rw: row.querySelector('.nama-rw-edit-input').value,
+                    bulan: isNew ? bulanList[new Date().getMonth()] : originalData.bulan,
+                    tahun: isNew ? new Date().getFullYear() : originalData.tahun,
+                };
+
+                const rwRegex = /^\d{3}$/;
+                if (!rwRegex.test(dataPayload.nama_rw)) {
+                    showStatus('Nama RW harus terdiri dari 3 digit angka.', true);
+                    return;
+                }
+                
+                [...ksKeys, ...eventKeys, ...genderEventKeys].forEach(key => {
+                     const input = row.querySelector(`[data-key="${key}"]`);
+                     if(input) dataPayload[key] = Number(input.value) || 0;
+                });
+                
+                if (!dataPayload.kelurahan) {
+                    showStatus('Desa/Kelurahan tidak boleh kosong.', true);
+                    return;
+                }
+                
+                try {
+                    if (isNew) {
+                        await addDoc(collectionRef, dataPayload);
+                        showStatus("Data baru berhasil ditambahkan.", false);
+                    } else {
+                        await updateDoc(doc(db, collectionRef.path, docId), dataPayload);
+                        showStatus("Data berhasil diperbarui.", false);
+                    }
+                } catch(error) {
+                    console.error("Error saving data: ", error);
+                    showStatus("Gagal menyimpan data: " + error.message, true);
+                }
+            }
+        });
+
+        addRowBtn.addEventListener('click', () => {
+            if (!tomSelectDesa || !tomSelectDesa.getValue()) {
+                showStatus('Silakan pilih Desa/Kelurahan di filter terlebih dahulu.', true);
+                return;
+            }
+
+            const newRow = previewBody.insertRow(0);
+            newRow.dataset.isNew = 'true';
+            
+            const prefilledData = { kelurahan: tomSelectDesa.getValue() };
+            newRow.innerHTML = generateEditRowHTML(prefilledData, true);
+        });
+        
+        previewBody.addEventListener('input', e => {
+            if (e.target.matches('.ks-edit-input, .gender-event-input')) {
+                calculateTotalsInRow(e.target.closest('tr'));
+            }
+        });
+        
+        filterTahunInput.addEventListener('input', fetchAndRenderData);
+        resetFilterBtn.addEventListener('click', () => {
+            tomSelectDesa.clear();
+            tomSelectBulan.setValue(bulanList[new Date().getMonth()], true); 
+            filterTahunInput.value = new Date().getFullYear();
+            fetchAndRenderData();
+        });
+        
+        // --- Export & Share Listeners ---
+
+        exportExcelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const { headers, rows } = getVisibleTableData();
+            if (rows.length === 0) {
+                showStatus('Tidak ada data untuk diekspor!', true);
+                return;
+            }
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            ws['!cols'] = Array(headers.length).fill({ wch: 15 });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data Laporan");
+            XLSX.writeFile(wb, "Laporan_Lengkap_Ciemas.xlsx");
+        });
+
+        exportPdfBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const { headers, rows } = getVisibleTableData();
+             if (rows.length === 0) {
+                showStatus('Tidak ada data untuk diekspor!', true);
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+
+            doc.autoTable({
+                head: [headers],
+                body: rows,
+                styles: { fontSize: 7 }
+            });
+
+            doc.save('Laporan_Lengkap_Ciemas.pdf');
+        });
+
+        exportWordBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const { headers, rows } = getVisibleTableData();
+            if (rows.length === 0) {
+                showStatus('Tidak ada data untuk diekspor!', true);
+                return;
+            }
+
+            let tableHtml = '<table style="border:1px solid #000; border-collapse: collapse;">';
+            tableHtml += '<thead><tr>' + headers.map(h => `<th style="border:1px solid #000; padding: 5px;">${h}</th>`).join('') + '</tr></thead>';
+            tableHtml += '<tbody>';
+            rows.forEach(row => {
+                tableHtml += '<tr>' + row.map(cell => `<td style="border:1px solid #000; padding: 5px;">${cell}</td>`).join('') + '</tr>';
+            });
+            tableHtml += '</tbody></table>';
+
+            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word</title></head><body>${fullHtml}</body></html>`;
+            
+            const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Laporan_Lengkap_Ciemas.doc';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+
+        shareBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const { headers, rows } = getVisibleTableData();
+            if (rows.length === 0) {
+                showStatus('Tidak ada data untuk dibagikan!', true);
+                return;
+            }
+
+            if (!navigator.share) {
+                showStatus('Fitur bagikan tidak didukung di browser ini.', true);
+                return;
+            }
+
+            let csvContent = headers.join(',') + '\n';
+            rows.forEach(row => {
+                csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+            });
+
+            const file = new File([csvContent], 'laporan.csv', { type: 'text/csv' });
+            
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Data Laporan',
+                    text: 'Berikut adalah data laporan dari Kecamatan Ciemas.'
+                });
+            } catch (error) {
+                // Silently handle user cancellation
+                if (error.name !== 'AbortError') {
+                    showStatus('Gagal membagikan file: ' + error.message, true);
+                }
+            }
+        });
+
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const circle = document.createElement("span");
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
+
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+            circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+            circle.classList.add("ripple");
+
+            const ripple = button.getElementsByClassName("ripple")[0];
+            if (ripple) {
+                ripple.remove();
+            }
+            button.appendChild(circle);
+        }
+
+
+        // --- App Initialization ---
+        async function main() {
+            try {
+                // Initialize Tom Select for filters
+                tomSelectDesa = new TomSelect(filterKelurahanSelect, {
+                    options: kelurahanList.map(v => ({value: v, text: v})),
+                    create: false,
+                    onChange: fetchAndRenderData,
+                    placeholder: 'Cari atau Pilih Desa...'
+                });
+                tomSelectBulan = new TomSelect(filterBulanSelect, {
+                    options: bulanList.map(v => ({value: v, text: v})),
+                    create: false,
+                    onChange: fetchAndRenderData,
+                    placeholder: 'Cari atau Pilih Bulan...'
+                });
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        const collectionPath = `/artifacts/${appId}/users/${userId}/laporan_rw_dinamis_lengkap`;
+                        collectionRef = collection(db, collectionPath);
+                        
+                        // Set default filters before the first fetch
+                        const now = new Date();
+                        tomSelectBulan.setValue(bulanList[now.getMonth()]); // This will trigger the first fetch
+                        filterTahunInput.value = now.getFullYear();
+                        
+                    } else {
+                        loadingIndicator.textContent = "Silakan login untuk melihat data.";
+                    }
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                // Add ripple effect listener to all MDB-style buttons
+                document.querySelectorAll('.mdb-btn').forEach(btn => {
+                    btn.addEventListener('click', createRipple);
+                });
+
+            } catch(error) {
+                console.error("Firebase Initialization Error:", error);
+                loadingIndicator.textContent = "Gagal menginisialisasi aplikasi. Cek konsol untuk detail.";
+                loadingIndicator.style.color = 'red';
+            }
+        }
+        
+        main();
+    </script>
+</body>
+</html>
