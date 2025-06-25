@@ -215,7 +215,7 @@
             const config = {
                 title: isError ? 'Gagal' : 'Sukses',
                 message: message,
-                position: 'bottomCenter', // Changed position
+                position: 'bottomCenter',
                 timeout: 4000,
                 progressBarColor: isError ? 'rgb(220, 53, 69)' : 'rgb(25, 135, 84)',
             };
@@ -525,7 +525,7 @@
             });
             tableHtml += '</tbody></table>';
 
-            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word</title></head><body>${fullHtml}</body></html>`;
+            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word</title></head><body>${tableHtml}</body></html>`;
             
             const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
@@ -640,8 +640,8 @@
                 });
 
             } catch(error) {
-                console.error("Firebase Initialization Error:", error);
-                loadingIndicator.textContent = "Gagal menginisialisasi aplikasi. Cek konsol untuk detail.";
+                console.error("Initialization Error:", error);
+                loadingIndicator.textContent = `Gagal menginisialisasi aplikasi: ${error.message}`;
                 loadingIndicator.style.color = 'red';
             }
         }
