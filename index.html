@@ -178,14 +178,21 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+        const firebaseConfig = {
+          apiKey: "AIzaSyAlu_X6HPCR0KVhbcXdF4xI0ywIsf-luds",
+          authDomain: "laporan-mdk-app.firebaseapp.com",
+          projectId: "laporan-mdk-app",
+          storageBucket: "laporan-mdk-app.appspot.com",
+          messagingSenderId: "270867944086",
+          appId: "1:270867944086:web:7440066839864fd51568b7",
+          measurementId: "G-0GJDVY4HJD"
+        };
+        const appId = 'laporan-mdk-app'; // Static App ID for standalone use
+        
         const kelurahanList = ["CIEMAS", "CIBENDA", "CIWARU", "MEKARJAYA", "GIRIMUKTI", "TAMANJAYA", "MANDRAJAYA", "SIDAMULYA", "MEKARSAKTI"];
         const bulanList = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         const ksKeys = ['pra_ks', 'ks_i', 'ks_ii', 'ks_iii', 'ks_iii_plus'];
@@ -615,7 +622,7 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        const collectionPath = `/artifacts/${appId}/users/${userId}/laporan_rw_dinamis_lengkap`;
+                        const collectionPath = `/laporan_mdk_data/users/${userId}/laporan_rw`;
                         collectionRef = collection(db, collectionPath);
                         
                         // Set default filters before the first fetch
@@ -628,11 +635,7 @@
                     }
                 });
 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
                 
                 // Add ripple effect listener to all MDB-style buttons
                 document.querySelectorAll('.mdb-btn').forEach(btn => {
