@@ -532,7 +532,7 @@
             });
             tableHtml += '</tbody></table>';
 
-            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word</title></head><body>${tableHtml}</body></html>`;
+            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word</title></head><body>${fullHtml}</body></html>`;
             
             const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
@@ -622,7 +622,7 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        const collectionPath = `/laporan_mdk_data/users/${userId}/laporan_rw`;
+                        const collectionPath = `laporan_mdk_data/${userId}/laporan_rw`;
                         collectionRef = collection(db, collectionPath);
                         
                         // Set default filters before the first fetch
