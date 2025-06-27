@@ -207,6 +207,7 @@
           appId: "1:270867944086:web:7440066839864fd51568b7",
           measurementId: "G-0GJDVY4HJD"
         };
+        
         const kelurahanList = ["CIEMAS", "CIBENDA", "CIWARU", "MEKARJAYA", "GIRIMUKTI", "TAMANJAYA", "MANDRAJAYA", "SIDAMULYA", "MEKARSAKTI"];
         const bulanList = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         const ksKeys = ['pra_ks', 'ks_i', 'ks_ii', 'ks_iii', 'ks_iii_plus'];
@@ -307,7 +308,7 @@
                     <button class="cancel-btn text-btn text-gray-600 hover:text-gray-900">Batal</button>
                 </td>
                 <td class="px-2 py-1"><select class="edit-input w-full kelurahan-edit-input" disabled>${kelurahanList.map(k => `<option value="${k}" ${k === data.kelurahan ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
-                ${ksKeys.map(key => `<td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center ks-edit-input" data-key="${key}" value="${data[key] || 0}" style="font-size: 15px;"></td>`).join('')}
+                ${ksKeys.map(key => `<td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center ks-edit-input" data-key="${key}" value="${data[key] || 0}"></td>`).join('')}
                 <td class="px-2 py-1 text-sm font-bold text-center total-ks-cell">${totalKs}</td>
                 ${genderEventKeys.map(key => `<td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center gender-event-input" data-key="${key}" value="${data[key] || 0}"></td>`).join('')}
                 <td class="px-2 py-1 text-sm text-center calculated-cell total-lahir-cell">${totalLahir}</td>
