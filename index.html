@@ -231,7 +231,7 @@
         const exportWordBtn = document.getElementById('export-word-btn');
         const shareBtn = document.getElementById('share-btn');
 
-        let db, auth, userId, collectionRef;
+        let db, auth, collectionRef;
         let unsubscribe = () => {};
         let tomSelectDesa, tomSelectBulan;
 
@@ -447,14 +447,24 @@
                 }
                 
                 try {
+                    iziToast.info({
+                        title: 'Menyimpan',
+                        message: 'Sedang menyimpan data...',
+                        position: 'bottomCenter',
+                        timeout: false,
+                        id: 'saving'
+                    });
                     if (isNew) {
                         await addDoc(collectionRef, dataPayload);
+                        iziToast.destroy();
                         showStatus("Data baru berhasil ditambahkan.", false);
                     } else {
                         await updateDoc(doc(db, collectionRef.path, docId), dataPayload);
+                        iziToast.destroy();
                         showStatus("Data berhasil diperbarui.", false);
                     }
                 } catch(error) {
+                    iziToast.destroy();
                     console.error("Error saving data: ", error);
                     showStatus("Gagal menyimpan data: " + error.message, true);
                 }
@@ -630,8 +640,7 @@
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        userId = user.uid;
-                        const collectionPath = `laporan_mdk_data/${userId}/laporan_rw`;
+                        const collectionPath = `laporan_mdk_data/v1/laporan_rw`; // Public Path
                         collectionRef = collection(db, collectionPath);
                         
                         // Set default filters before the first fetch
