@@ -29,9 +29,6 @@
         select:disabled, input:disabled { background-color: #f3f4f6; color: #6b7280; }
         .table-container { min-height: 400px; }
         th { white-space: nowrap; }
-        /* Dropdown styles */
-        .dropdown:hover .dropdown-menu { display: block; }
-        .dropdown-menu { display: none; }
         /* MDB-like button and input focus */
         .mdb-btn {
             position: relative;
@@ -69,6 +66,7 @@
         }
         /* Tom Select custom styling to match theme */
         .ts-control {
+            padding: 0.65rem 1rem;
             border-radius: 0.375rem;
             border-color: #d1d5db;
         }
@@ -81,7 +79,7 @@
         }
         .ts-control.focus {
             border-color: #3b71ca;
-            box-shadow: 0 0 0 3px rgba(59, 113, 202, 0.2);
+            box-shadow: 0 0 0 0.25rem rgba(59, 113, 202, 0.25);
         }
         .report-photo {
             width: 80px;
@@ -141,6 +139,38 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* MDB-like input styling */
+        .form-input {
+            display: block;
+            width: 100%;
+            padding: 0.65rem 1rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 0.375rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-input:focus {
+            color: #212529;
+            background-color: #fff;
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .form-input.is-invalid {
+            border-color: #dc3545;
+        }
+        .form-input.is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -149,13 +179,13 @@
         <div class="max-w-screen-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
             <!-- Header Section -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-4 border-b">
-                <h1 class="text-2xl font-bold text-gray-800">EDIP - Laporan Kampung KB</h1>
+                <h1 class="text-2xl font-bold text-gray-800">EDIP - Visual Kegiatan</h1>
                 <!-- Dropdown Button for Export/Share -->
-                <div class="relative dropdown mt-3 sm:mt-0">
+                <div class="relative mt-3 sm:mt-0">
                     <button id="export-dropdown-btn" class="w-full sm:w-auto bg-[#3b71ca] text-white font-semibold py-2.5 px-6 rounded-lg mdb-btn btn-disabled" disabled>
                         Ekspor / Bagikan &#9662;
                     </button>
-                    <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20">
+                    <div id="export-dropdown-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20">
                         <a href="#" id="export-excel-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke Excel</a>
                         <a href="#" id="export-pdf-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke PDF</a>
                         <a href="#" id="export-word-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke Word</a>
@@ -173,15 +203,15 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label for="filter-provinsi" class="block text-sm font-medium text-gray-700">Provinsi</label>
-                        <select id="filter-provinsi" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" disabled></select>
+                        <select id="filter-provinsi" class="form-input mt-1" disabled></select>
                     </div>
                     <div>
                         <label for="filter-kabupaten" class="block text-sm font-medium text-gray-700">Kabupaten/Kota</label>
-                        <select id="filter-kabupaten" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" disabled></select>
+                        <select id="filter-kabupaten" class="form-input mt-1" disabled></select>
                     </div>
                     <div>
                         <label for="filter-kecamatan" class="block text-sm font-medium text-gray-700">Kecamatan</label>
-                        <select id="filter-kecamatan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" disabled></select>
+                        <select id="filter-kecamatan" class="form-input mt-1" disabled></select>
                     </div>
                 </div>
                 <!-- Dynamic Filters -->
@@ -229,17 +259,17 @@
     <div id="data-modal" class="modal-overlay hidden opacity-0 pointer-events-none">
         <div class="modal-content">
             <h3 id="modal-title" class="text-xl font-bold mb-4">Data Laporan</h3>
-            <form id="data-form">
+            <form id="data-form" novalidate>
                 <input type="hidden" id="modal-doc-id">
                 
                 <div class="mb-4">
                     <label for="modal-desa" class="block text-sm font-medium text-gray-700">Desa/Kelurahan</label>
-                    <select id="modal-desa" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></select>
+                    <select id="modal-desa" required class="form-input mt-1"></select>
                 </div>
 
                 <div class="mb-4">
                     <label for="modal-kegiatan" class="block text-sm font-medium text-gray-700">Nama Kegiatan</label>
-                    <select id="modal-kegiatan" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <select id="modal-kegiatan" required class="form-input mt-1">
                         <option value="">--PILIH--</option>
                         <option value="POKJA KAMPUNG KB">POKJA KAMPUNG KB</option>
                         <option value="DAHSAT">DAHSAT</option>
@@ -248,12 +278,12 @@
 
                 <div class="mb-4">
                     <label for="modal-bulan" class="block text-sm font-medium text-gray-700">Bulan</label>
-                    <select id="modal-bulan" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></select>
+                    <select id="modal-bulan" required class="form-input mt-1"></select>
                 </div>
 
                 <div class="mb-4">
                     <label for="modal-tahun" class="block text-sm font-medium text-gray-700">Tahun</label>
-                    <input type="number" id="modal-tahun" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Contoh: 2024">
+                    <input type="number" id="modal-tahun" required class="form-input mt-1" placeholder="Contoh: 2024">
                 </div>
 
                 <div class="mb-4">
@@ -308,6 +338,8 @@
         const filterKelurahanSelect = document.getElementById('filter-kelurahan');
         const resetFilterBtn = document.getElementById('reset-filter-btn');
         const addDataBtn = document.getElementById('add-data-btn');
+        const exportDropdownBtn = document.getElementById('export-dropdown-btn');
+        const exportDropdownMenu = document.getElementById('export-dropdown-menu');
         // Modal Elements
         const dataModal = document.getElementById('data-modal');
         const modalTitle = document.getElementById('modal-title');
@@ -401,45 +433,68 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
+            // Page dimensions
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 15;
+            const usableWidth = pageWidth - (margin * 2);
+
             // Title
             doc.setFontSize(18);
             doc.setFont(undefined, 'bold');
-            doc.text(data.nama_kegiatan || 'Laporan Kegiatan', doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+            doc.text(data.nama_kegiatan || 'Laporan Kegiatan', pageWidth / 2, 22, { align: 'center' });
 
             // Details
             doc.setFontSize(12);
             doc.setFont(undefined, 'normal');
-            doc.text(`Desa/Kelurahan: ${data.desa_kelurahan}`, 14, 32);
-            doc.text(`Periode: ${data.bulan} ${data.tahun}`, 14, 38);
+            doc.text(`Desa/Kelurahan: ${data.desa_kelurahan}`, margin, 32);
+            doc.text(`Periode: ${data.bulan} ${data.tahun}`, margin, 38);
 
             // Photos
             if (Array.isArray(data.foto) && data.foto.length > 0) {
                 let yPosition = 50;
-                const pageHeight = doc.internal.pageSize.height;
-                const imageWidth = 180; // Width of the image in the PDF
-                const margin = 14;
 
                 for (const base64Image of data.foto) {
                     try {
                         const imgProps = doc.getImageProperties(base64Image);
-                        const aspectRatio = imgProps.height / imgProps.width;
-                        const imageHeight = imageWidth * aspectRatio;
+                        const aspectRatio = imgProps.width / imgProps.height;
+                        
+                        // Calculate image dimensions to fit width
+                        let imgWidth = usableWidth;
+                        let imgHeight = imgWidth / aspectRatio;
 
-                        if (yPosition + imageHeight > pageHeight - margin) {
+                        // If image is too tall, resize based on a max height to prevent overflow
+                        const maxImageHeight = pageHeight * 0.4; // Max 40% of page height
+                        if (imgHeight > maxImageHeight) {
+                            imgHeight = maxImageHeight;
+                            imgWidth = imgHeight * aspectRatio;
+                        }
+                        
+                        // Center the image horizontally
+                        const xPosition = (pageWidth - imgWidth) / 2;
+
+                        // Check if it fits on the current page, otherwise add a new one
+                        if (yPosition + imgHeight > pageHeight - margin) {
                             doc.addPage();
                             yPosition = margin; // Reset yPosition for new page
                         }
 
-                        doc.addImage(base64Image, imgProps.fileType, margin, yPosition, imageWidth, imageHeight);
-                        yPosition += imageHeight + 10; // Add some space between images
+                        doc.addImage(base64Image, imgProps.fileType, xPosition, yPosition, imgWidth, imgHeight);
+                        yPosition += imgHeight + 10; // Add some space between images
+
                     } catch (e) {
                         console.error("Gagal menambahkan gambar ke PDF:", e);
-                        doc.text('Gagal memuat gambar.', 14, yPosition);
+                        // Move to next line if image fails
+                        if (yPosition + 10 > pageHeight - margin) {
+                            doc.addPage();
+                            yPosition = margin;
+                        }
+                        doc.text('Gagal memuat gambar.', margin, yPosition);
                         yPosition += 10;
                     }
                 }
             } else {
-                doc.text('Tidak ada foto tersedia.', 14, 50);
+                doc.text('Tidak ada foto tersedia.', margin, 50);
             }
 
             // Save the PDF
@@ -464,6 +519,9 @@
 
             unsubscribe = onSnapshot(q, (snapshot) => {
                 loadingIndicator.style.display = 'none';
+                const hasData = !snapshot.empty;
+                exportDropdownBtn.disabled = !hasData;
+                exportDropdownBtn.classList.toggle('btn-disabled', !hasData);
                 
                 snapshot.docChanges().forEach((change) => {
                     const docData = change.doc.data();
@@ -583,11 +641,24 @@
         dataForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Validation
-            if (!modalKegiatan.value) {
-                showStatus('Nama Kegiatan harus dipilih.', true);
+            // --- VALIDATION LOGIC START ---
+            let isValid = true;
+            const requiredFields = [modalDesa, modalKegiatan, modalBulan, modalTahun];
+            
+            requiredFields.forEach(field => {
+                if (!field.value) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                showStatus('Harap isi semua kolom yang wajib diisi.', true);
                 return;
             }
+            // --- VALIDATION LOGIC END ---
 
             modalSaveBtn.disabled = true;
             modalSaveBtn.textContent = 'Menyimpan...';
@@ -656,6 +727,8 @@
 
         addDataBtn.addEventListener('click', () => {
             dataForm.reset();
+            const invalidFields = dataForm.querySelectorAll('.is-invalid');
+            invalidFields.forEach(field => field.classList.remove('is-invalid'));
             modalDocId.value = '';
             modalExistingPhotos.innerHTML = '';
             modalTitle.textContent = 'Tambah Data Baru';
@@ -668,8 +741,16 @@
             tomSelectDesa.clear();
         });
         
-        // --- Export & Share Listeners ---
-        // (No changes needed here)
+        exportDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportDropdownMenu.classList.toggle('hidden');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (!exportDropdownBtn.contains(e.target) && !exportDropdownMenu.contains(e.target)) {
+                exportDropdownMenu.classList.add('hidden');
+            }
+        });
 
         function createRipple(event) {
             const button = event.currentTarget;
