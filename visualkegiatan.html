@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EDIP-Visual Kegiatan</title>
+    <title>EDIP - Visual Kegiatan</title>
     <link rel="shortcut icon" href="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png">
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,6 +18,8 @@
     <!-- iziToast for Notifications -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <!-- Browser Image Compression Library -->
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
     <style>
         /* Custom font and minor style adjustments */
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
@@ -25,11 +27,8 @@
         .btn-disabled { cursor: not-allowed; background-color: #9ca3af; }
         .btn-disabled:hover { background-color: #9ca3af; }
         select:disabled, input:disabled { background-color: #f3f4f6; color: #6b7280; }
-        .edit-input { width: 100%; padding: 4px 8px; border-radius: 6px; border: 1px solid #d1d5db; -moz-appearance: textfield; }
-        .edit-input::-webkit-outer-spin-button, .edit-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .table-container { min-height: 400px; }
         th { white-space: nowrap; }
-        .calculated-cell { font-weight: bold; background-color: #f9fafb; }
         /* Dropdown styles */
         .dropdown:hover .dropdown-menu { display: block; }
         .dropdown-menu { display: none; }
@@ -74,12 +73,73 @@
             border-color: #d1d5db;
         }
         .ts-dropdown {
-            z-index: 20;
-            background-color: white;
+            z-index: 1050; /* Increased z-index to ensure it's on top */
+            background-color: white; /* Added background color to prevent transparency */
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .ts-control.focus {
             border-color: #3b71ca;
             box-shadow: 0 0 0 3px rgba(59, 113, 202, 0.2);
+        }
+        .report-photo {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .photo-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+        /* Loader Animation */
+        .loader {
+            border-top-color: #3b71ca;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -89,9 +149,9 @@
         <div class="max-w-screen-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
             <!-- Header Section -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-4 border-b">
-                 <h1 class="text-2xl font-bold text-gray-800">EDIP-Laporan MDK</h1>
-                 <!-- Dropdown Button for Export/Share -->
-                 <div class="relative dropdown mt-3 sm:mt-0">
+                <h1 class="text-2xl font-bold text-gray-800">EDIP - Laporan Kampung KB</h1>
+                <!-- Dropdown Button for Export/Share -->
+                <div class="relative dropdown mt-3 sm:mt-0">
                     <button id="export-dropdown-btn" class="w-full sm:w-auto bg-[#3b71ca] text-white font-semibold py-2.5 px-6 rounded-lg mdb-btn btn-disabled" disabled>
                         Ekspor / Bagikan &#9662;
                     </button>
@@ -104,12 +164,12 @@
                 </div>
             </div>
             
-             <!-- Controls Section -->
+            <!-- Controls Section -->
             <div class="mb-4">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold">Filter Data</h2>
                 </div>
-                 <!-- Static Filters -->
+                <!-- Static Filters -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label for="filter-provinsi" class="block text-sm font-medium text-gray-700">Provinsi</label>
@@ -124,19 +184,11 @@
                         <select id="filter-kecamatan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" disabled></select>
                     </div>
                 </div>
-                 <!-- Dynamic Filters -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Dynamic Filters -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="filter-kelurahan" class="block text-sm font-medium text-gray-700">Filter Desa/Kelurahan</label>
-                        <select id="filter-kelurahan" placeholder="Cari Desa..."></select>
-                    </div>
-                    <div>
-                        <label for="filter-bulan" class="block text-sm font-medium text-gray-700">Filter Bulan</label>
-                        <select id="filter-bulan" placeholder="Cari Bulan..."></select>
-                    </div>
-                    <div>
-                        <label for="filter-tahun" class="block text-sm font-medium text-gray-700">Filter Tahun</label>
-                         <input type="number" id="filter-tahun" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring focus:ring-opacity-50" placeholder="Semua Tahun">
+                        <select id="filter-kelurahan" placeholder="Cari atau Pilih Desa..."></select>
                     </div>
                     <div class="self-end">
                         <button id="reset-filter-btn" class="w-full bg-gray-500 text-white font-semibold py-2.5 px-4 rounded-lg mdb-btn">
@@ -151,46 +203,85 @@
                 <table id="main-table" class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-100">
                         <tr>
-                            <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desa/Kelurahan</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RW</th>
-                            <!-- Kelompok KS -->
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pra-KS</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS I</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS II</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS III</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KS III+</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">JUMLAH TAHAPAN KS</th>
-                            <!-- Peristiwa per Gender -->
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lahir(L)</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lahir(P)</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masuk(L)</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masuk(P)</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pindah(L)</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pindah(P)</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meninggal(L)</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meninggal(P)</th>
-                             <!-- Kelompok Peristiwa (Dipindahkan) -->
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lahir</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Masuk</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pindah</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meninggal</th>
-                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Menikah</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Desa/Kelurahan</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Kegiatan</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bulan</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun</th>
                         </tr>
                     </thead>
                     <tbody id="preview-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Data rows will be dynamically inserted here by Firebase -->
+                        <!-- Data rows will be dynamically inserted here -->
                     </tbody>
                 </table>
-                 <div id="loading-indicator" class="w-full text-center py-8 text-gray-500">Memuat data...</div>
+                <div id="loading-indicator" class="w-full text-center py-8 text-gray-500">Memuat data...</div>
             </div>
         </div>
     </div>
 
     <!-- Floating Action Button -->
-    <button id="add-row-btn" class="fixed bottom-8 right-8 bg-[#3b71ca] text-white w-16 h-16 rounded-full flex items-center justify-center text-4xl mdb-btn z-10">
+    <button id="add-data-btn" class="fixed bottom-8 right-8 bg-[#3b71ca] text-white w-16 h-16 rounded-full flex items-center justify-center text-4xl mdb-btn z-30">
         +
     </button>
+
+    <!-- Data Modal -->
+    <div id="data-modal" class="modal-overlay hidden opacity-0 pointer-events-none">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-xl font-bold mb-4">Data Laporan</h3>
+            <form id="data-form">
+                <input type="hidden" id="modal-doc-id">
+                
+                <div class="mb-4">
+                    <label for="modal-desa" class="block text-sm font-medium text-gray-700">Desa/Kelurahan</label>
+                    <select id="modal-desa" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="modal-kegiatan" class="block text-sm font-medium text-gray-700">Nama Kegiatan</label>
+                    <select id="modal-kegiatan" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        <option value="">--PILIH--</option>
+                        <option value="POKJA KAMPUNG KB">POKJA KAMPUNG KB</option>
+                        <option value="DAHSAT">DAHSAT</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="modal-bulan" class="block text-sm font-medium text-gray-700">Bulan</label>
+                    <select id="modal-bulan" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="modal-tahun" class="block text-sm font-medium text-gray-700">Tahun</label>
+                    <input type="number" id="modal-tahun" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Contoh: 2024">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Foto</label>
+                    <div id="modal-existing-photos" class="my-2 photo-gallery"></div>
+                    <input type="file" id="modal-foto" multiple accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="text-xs text-gray-500 mt-1">Pilih file baru untuk menggantikan yang lama (jika ada).</p>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" id="modal-cancel-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                    <button type="submit" id="modal-save-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div id="progress-modal" class="modal-overlay hidden opacity-0 pointer-events-none">
+        <div class="modal-content text-center">
+            <h3 class="text-xl font-bold mb-4">Menyimpan Data</h3>
+            <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24 mx-auto mb-4"></div>
+            <p id="progress-status-text" class="text-lg text-gray-700">Mohon tunggu...</p>
+            <div class="w-full bg-gray-200 rounded-full h-4 mt-4">
+                <div id="progress-bar" class="bg-blue-600 h-4 rounded-full text-xs font-medium text-blue-100 text-center p-0.5 leading-none" style="width: 0%">0%</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -200,143 +291,161 @@
 
         // --- Configuration ---
         const firebaseConfig = {
-          apiKey: "AIzaSyAlu_X6HPCR0KVhbcXdF4xI0ywIsf-luds",
-          authDomain: "laporan-mdk-app.firebaseapp.com",
-          projectId: "laporan-mdk-app",
-          storageBucket: "laporan-mdk-app.appspot.com",
-          messagingSenderId: "270867944086",
-          appId: "1:270867944086:web:7440066839864fd51568b7",
-          measurementId: "G-0GJDVY4HJD"
+            apiKey: "AIzaSyBRdj0P8JpsAUcD3h5QIfqBdW-fvk2sf9A",
+            authDomain: "visual-kegiatan.firebaseapp.com",
+            projectId: "visual-kegiatan",
+            storageBucket: "visual-kegiatan.appspot.com",
+            messagingSenderId: "471290040499",
+            appId: "1:471290040499:web:4ad864e35653e260a5a0c6",
+            measurementId: "G-6GJD1SWR6C"
         };
-        
         const kelurahanList = ["CIEMAS", "CIBENDA", "CIWARU", "MEKARJAYA", "GIRIMUKTI", "TAMANJAYA", "MANDRAJAYA", "SIDAMULYA", "MEKARSAKTI"];
-        const bulanList = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-        const ksKeys = ['pra_ks', 'ks_i', 'ks_ii', 'ks_iii', 'ks_iii_plus'];
-        const eventKeys = ['menikah'];
-        const genderEventKeys = ['lahir_laki', 'lahir_perempuan', 'masuk_laki', 'masuk_perempuan', 'pindah_laki', 'pindah_perempuan', 'meninggal_laki', 'meninggal_perempuan'];
+        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         
         // --- DOM Elements ---
         const previewBody = document.getElementById('preview-body');
         const loadingIndicator = document.getElementById('loading-indicator');
-        const filterProvinsiSelect = document.getElementById('filter-provinsi');
-        const filterKabupatenSelect = document.getElementById('filter-kabupaten');
-        const filterKecamatanSelect = document.getElementById('filter-kecamatan');
         const filterKelurahanSelect = document.getElementById('filter-kelurahan');
-        const filterBulanSelect = document.getElementById('filter-bulan');
-        const filterTahunInput = document.getElementById('filter-tahun');
         const resetFilterBtn = document.getElementById('reset-filter-btn');
-        const addRowBtn = document.getElementById('add-row-btn');
-        const exportDropdownBtn = document.getElementById('export-dropdown-btn');
-        const exportExcelBtn = document.getElementById('export-excel-btn');
-        const exportPdfBtn = document.getElementById('export-pdf-btn');
-        const exportWordBtn = document.getElementById('export-word-btn');
-        const shareBtn = document.getElementById('share-btn');
+        const addDataBtn = document.getElementById('add-data-btn');
+        // Modal Elements
+        const dataModal = document.getElementById('data-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const dataForm = document.getElementById('data-form');
+        const modalDocId = document.getElementById('modal-doc-id');
+        const modalDesa = document.getElementById('modal-desa');
+        const modalKegiatan = document.getElementById('modal-kegiatan');
+        const modalBulan = document.getElementById('modal-bulan');
+        const modalTahun = document.getElementById('modal-tahun');
+        const modalFoto = document.getElementById('modal-foto');
+        const modalExistingPhotos = document.getElementById('modal-existing-photos');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalSaveBtn = document.getElementById('modal-save-btn');
+        // Progress Modal Elements
+        const progressModal = document.getElementById('progress-modal');
+        const progressStatusText = document.getElementById('progress-status-text');
+        const progressBar = document.getElementById('progress-bar');
+
 
         let db, auth, collectionRef;
         let unsubscribe = () => {};
-        let tomSelectDesa, tomSelectBulan;
+        let tomSelectDesa;
+        let userId;
 
         // --- Helper Functions ---
-        const showStatus = (message, isError = false) => {
+        const showStatus = (message, isError = false, persist = false) => {
             const config = {
                 title: isError ? 'Gagal' : 'Sukses',
                 message: message,
                 position: 'bottomCenter',
-                timeout: 4000,
+                timeout: persist ? false : 4000,
                 progressBarColor: isError ? 'rgb(220, 53, 69)' : 'rgb(25, 135, 84)',
             };
-
-            if (isError) {
-                iziToast.error(config);
-            } else {
-                iziToast.success(config);
-            }
-        };
-
-        const calculateTotalsInRow = (row) => {
-            const ksInputs = row.querySelectorAll('.ks-edit-input');
-            const totalKs = Array.from(ksInputs).reduce((sum, input) => sum + (Number(input.value) || 0), 0);
-            row.querySelector('.total-ks-cell').textContent = totalKs;
-            
-            const totalLahir = (Number(row.querySelector('[data-key="lahir_laki"]').value) || 0) + (Number(row.querySelector('[data-key="lahir_perempuan"]').value) || 0);
-            const totalMasuk = (Number(row.querySelector('[data-key="masuk_laki"]').value) || 0) + (Number(row.querySelector('[data-key="masuk_perempuan"]').value) || 0);
-            const totalPindah = (Number(row.querySelector('[data-key="pindah_laki"]').value) || 0) + (Number(row.querySelector('[data-key="pindah_perempuan"]').value) || 0);
-            const totalMeninggal = (Number(row.querySelector('[data-key="meninggal_laki"]').value) || 0) + (Number(row.querySelector('[data-key="meninggal_perempuan"]').value) || 0);
-            
-            row.querySelector('.total-lahir-cell').textContent = totalLahir;
-            row.querySelector('.total-masuk-cell').textContent = totalMasuk;
-            row.querySelector('.total-pindah-cell').textContent = totalPindah;
-            row.querySelector('.total-meninggal-cell').textContent = totalMeninggal;
+            if (isError) iziToast.error(config);
+            else iziToast.success(config);
         };
 
         const generateRowHTML = (docData, docId) => {
-            const totalKs = ksKeys.reduce((s, k) => s + (Number(docData[k]) || 0), 0);
-            const totalLahir = (Number(docData.lahir_laki) || 0) + (Number(docData.lahir_perempuan) || 0);
-            const totalMasuk = (Number(docData.masuk_laki) || 0) + (Number(docData.masuk_perempuan) || 0);
-            const totalPindah = (Number(docData.pindah_laki) || 0) + (Number(docData.pindah_perempuan) || 0);
-            const totalMeninggal = (Number(docData.meninggal_laki) || 0) + (Number(docData.meninggal_perempuan) || 0);
+            const placeholderImg = `https://placehold.co/100x75/e2e8f0/64748b?text=No+Image`;
+            const photos = docData.foto;
+            let photoHTML = `<img src="${placeholderImg}" alt="Foto Laporan" class="report-photo">`;
+            
+            if (Array.isArray(photos) && photos.length > 0) {
+                photoHTML = `<div class="photo-gallery">` + photos.map(url =>
+                    `<a href="${url}" target="_blank" rel="noopener noreferrer">
+                        <img src="${url}" alt="Foto Laporan" class="report-photo" onerror="this.onerror=null;this.src='${placeholderImg}';">
+                    </a>`
+                ).join('') + `</div>`;
+            }
 
             return `
-                <td class="px-2 py-2 text-center text-sm">
+                <td class="px-4 py-2 text-center text-sm whitespace-nowrap">
+                    <button class="export-pdf-btn text-btn text-red-600 hover:text-red-900 mr-2" data-id="${docId}">PDF</button>
                     <button class="edit-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${docId}">Edit</button>
-                    <button class="delete-btn text-btn text-red-600 hover:text-red-900" data-id="${docId}">Hapus</button>
+                    <button class="delete-btn text-btn text-gray-600 hover:text-gray-900" data-id="${docId}">Hapus</button>
                 </td>
-                <td class="px-2 py-2 text-sm">${docData.kelurahan || ''}</td>
-                <td class="px-2 py-2 text-sm">${docData.rw || ''}</td>
-                ${ksKeys.map(key => `<td class="px-2 py-2 text-sm text-center">${docData[key] || 0}</td>`).join('')}
-                <td class="px-2 py-2 text-sm font-bold text-center">${totalKs}</td>
-                ${genderEventKeys.map(key => `<td class="px-2 py-2 text-sm text-center">${docData[key] || 0}</td>`).join('')}
-                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalLahir}</td>
-                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalMasuk}</td>
-                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalPindah}</td>
-                <td class="px-2 py-2 text-sm text-center calculated-cell">${totalMeninggal}</td>
-                <td class="px-2 py-2 text-sm text-center">${docData.menikah || 0}</td>
+                <td class="px-4 py-2 text-sm">${docData.desa_kelurahan || ''}</td>
+                <td class="px-4 py-2 text-sm">${docData.nama_kegiatan || ''}</td>
+                <td class="px-4 py-2 text-sm">${photoHTML}</td>
+                <td class="px-4 py-2 text-sm">${docData.bulan || ''}</td>
+                <td class="px-4 py-2 text-sm">${docData.tahun || ''}</td>
             `;
         }
+        
+        const fileToBase64 = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
 
-        const generateEditRowHTML = (docData = {}, isNew = false) => {
-            const allKeys = [...ksKeys, ...eventKeys, ...genderEventKeys];
-            const data = { kelurahan: '', rw: '', ...Object.fromEntries(allKeys.map(k => [k, 0])), ...docData };
-            
-            const totalKs = ksKeys.reduce((s, k) => s + (Number(data[k]) || 0), 0);
-            const totalLahir = (Number(data.lahir_laki) || 0) + (Number(data.lahir_perempuan) || 0);
-            const totalMasuk = (Number(data.masuk_laki) || 0) + (Number(data.masuk_perempuan) || 0);
-            const totalPindah = (Number(data.pindah_laki) || 0) + (Number(data.pindah_perempuan) || 0);
-            const totalMeninggal = (Number(data.meninggal_laki) || 0) + (Number(data.meninggal_perempuan) || 0);
-            
-            return `
-                <td class="px-2 py-1 text-center">
-                    <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2">${isNew ? 'Tambah' : 'Simpan'}</button>
-                    <button class="cancel-btn text-btn text-gray-600 hover:text-gray-900">Batal</button>
-                </td>
-                <td class="px-2 py-1"><select class="edit-input w-full kelurahan-edit-input" disabled>${kelurahanList.map(k => `<option value="${k}" ${k === data.kelurahan ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
-                <td class="px-2 py-1"><input type="text" class="edit-input w-20 text-center rw-edit-input" data-key="rw" value="${data.rw || ''}" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="000"></td>
-                ${ksKeys.map(key => `<td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center ks-edit-input" data-key="${key}" value="${data[key] || 0}"></td>`).join('')}
-                <td class="px-2 py-1 text-sm font-bold text-center total-ks-cell">${totalKs}</td>
-                ${genderEventKeys.map(key => `<td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center gender-event-input" data-key="${key}" value="${data[key] || 0}"></td>`).join('')}
-                <td class="px-2 py-1 text-sm text-center calculated-cell total-lahir-cell">${totalLahir}</td>
-                <td class="px-2 py-1 text-sm text-center calculated-cell total-masuk-cell">${totalMasuk}</td>
-                <td class="px-2 py-1 text-sm text-center calculated-cell total-pindah-cell">${totalPindah}</td>
-                <td class="px-2 py-1 text-sm text-center calculated-cell total-meninggal-cell">${totalMeninggal}</td>
-                <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center" data-key="menikah" value="${data.menikah || 0}"></td>
-            `;
+        const compressImage = async (file) => {
+            const options = {
+                maxSizeMB: 0.5, // Max file size 0.5MB
+                maxWidthOrHeight: 1024, // Max width or height 1024px
+                useWebWorker: true,
+            };
+            try {
+                console.log(`Ukuran asli: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+                const compressedFile = await imageCompression(file, options);
+                console.log(`Ukuran setelah kompresi: ${(compressedFile.size / 1024 / 1024).toFixed(2)} MB`);
+                return compressedFile;
+            } catch (error) {
+                console.error('Gagal melakukan kompresi:', error);
+                // Return original file if compression fails
+                return file;
+            }
         };
 
-        function getVisibleTableData() {
-            const headers = Array.from(document.querySelectorAll('#main-table thead th'))
-                .map(th => th.textContent)
-                .slice(1); // Exclude "Aksi" column
+        const exportRowToPdf = async (data) => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-            const rows = [];
-            previewBody.querySelectorAll('tr').forEach(row => {
-                if (row.dataset.originalData && row.children.length > 1) {
-                    const cells = Array.from(row.querySelectorAll('td'));
-                    rows.push(cells.slice(1).map(cell => cell.textContent));
+            // Title
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text(data.nama_kegiatan || 'Laporan Kegiatan', doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+
+            // Details
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Desa/Kelurahan: ${data.desa_kelurahan}`, 14, 32);
+            doc.text(`Periode: ${data.bulan} ${data.tahun}`, 14, 38);
+
+            // Photos
+            if (Array.isArray(data.foto) && data.foto.length > 0) {
+                let yPosition = 50;
+                const pageHeight = doc.internal.pageSize.height;
+                const imageWidth = 180; // Width of the image in the PDF
+                const margin = 14;
+
+                for (const base64Image of data.foto) {
+                    try {
+                        const imgProps = doc.getImageProperties(base64Image);
+                        const aspectRatio = imgProps.height / imgProps.width;
+                        const imageHeight = imageWidth * aspectRatio;
+
+                        if (yPosition + imageHeight > pageHeight - margin) {
+                            doc.addPage();
+                            yPosition = margin; // Reset yPosition for new page
+                        }
+
+                        doc.addImage(base64Image, imgProps.fileType, margin, yPosition, imageWidth, imageHeight);
+                        yPosition += imageHeight + 10; // Add some space between images
+                    } catch (e) {
+                        console.error("Gagal menambahkan gambar ke PDF:", e);
+                        doc.text('Gagal memuat gambar.', 14, yPosition);
+                        yPosition += 10;
+                    }
                 }
-            });
+            } else {
+                doc.text('Tidak ada foto tersedia.', 14, 50);
+            }
 
-            return { headers, rows };
-        }
+            // Save the PDF
+            doc.save(`Laporan_${data.nama_kegiatan}_${data.desa_kelurahan}.pdf`);
+        };
+
 
         // --- Firestore Core Logic ---
         function fetchAndRenderData() {
@@ -347,40 +456,41 @@
             previewBody.innerHTML = '';
             
             const filters = [];
-            if (tomSelectDesa && tomSelectDesa.getValue()) filters.push(where("kelurahan", "==", tomSelectDesa.getValue()));
-            if (tomSelectBulan && tomSelectBulan.getValue()) filters.push(where("bulan", "==", tomSelectBulan.getValue()));
-            if (filterTahunInput.value) filters.push(where("tahun", "==", Number(filterTahunInput.value)));
+            if (tomSelectDesa && tomSelectDesa.getValue()) {
+                filters.push(where("desa_kelurahan", "==", tomSelectDesa.getValue()));
+            }
 
             const q = query(collectionRef, ...filters);
 
             unsubscribe = onSnapshot(q, (snapshot) => {
                 loadingIndicator.style.display = 'none';
                 
-                let docs = snapshot.docs;
-                // Client-side sorting
-                docs.sort((a, b) => {
-                    const dataA = a.data();
-                    const dataB = b.data();
-                    const kelurahanCompare = dataA.kelurahan.localeCompare(dataB.kelurahan);
-                    if (kelurahanCompare !== 0) return kelurahanCompare;
-                    return (dataA.rw || "").localeCompare(dataB.rw || "");
-                });
+                snapshot.docChanges().forEach((change) => {
+                    const docData = change.doc.data();
+                    const docId = change.doc.id;
+                    const row = previewBody.querySelector(`tr[data-id='${docId}']`);
 
-                if (docs.length === 0) {
-                    previewBody.innerHTML = `<tr><td colspan="22" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
-                } else {
-                    const rowsHtml = docs.map(doc => {
-                        const data = doc.data();
-                        const row = document.createElement('tr');
-                        row.dataset.id = doc.id;
-                        row.dataset.originalData = JSON.stringify(data);
-                        row.innerHTML = generateRowHTML(data, doc.id);
-                        return row.outerHTML;
-                    }).join('');
-                    previewBody.innerHTML = rowsHtml;
-                }
-                exportDropdownBtn.disabled = docs.length === 0;
-                exportDropdownBtn.classList.toggle('btn-disabled', docs.length === 0);
+                    if (change.type === "added") {
+                        if (!row) {
+                            const newRow = document.createElement('tr');
+                            newRow.dataset.id = docId;
+                            newRow.dataset.originalData = JSON.stringify(docData);
+                            newRow.innerHTML = generateRowHTML(docData, docId);
+                            previewBody.prepend(newRow);
+                        }
+                    }
+                    if (change.type === "modified") {
+                        if (row) {
+                            row.dataset.originalData = JSON.stringify(docData);
+                            row.innerHTML = generateRowHTML(docData, docId);
+                        }
+                    }
+                    if (change.type === "removed") {
+                        if (row) {
+                            row.remove();
+                        }
+                    }
+                });
 
             }, (error) => {
                 console.error("Error fetching data: ", error);
@@ -389,30 +499,56 @@
             });
         }
         
+        // --- Modal Logic ---
+        const openModal = (modalElement) => {
+            modalElement.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            requestAnimationFrame(() => {
+                modalElement.classList.add('visible');
+            });
+        };
+
+        const closeModal = (modalElement) => {
+            modalElement.classList.remove('visible');
+            setTimeout(() => {
+                modalElement.classList.add('hidden', 'opacity-0', 'pointer-events-none');
+            }, 300);
+        };
+
+        const updateProgress = (percentage, statusText) => {
+            const percent = Math.round(percentage);
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = `${percent}%`;
+            progressStatusText.textContent = statusText;
+        };
+
         // --- Event Listeners ---
         previewBody.addEventListener('click', async (e) => {
             const target = e.target;
-            const row = target.closest('tr');
-            if (!row) return;
-
-            const docId = row.dataset.id;
             
-            if (target.classList.contains('edit-btn')) {
-                const originalData = JSON.parse(row.dataset.originalData || '{}');
-                row.innerHTML = generateEditRowHTML(originalData, false);
+            if (target.closest('.edit-btn')) {
+                const row = target.closest('tr');
+                const data = JSON.parse(row.dataset.originalData);
+                data.id = row.dataset.id;
+                openModal(dataModal);
+                // Fill form for editing
+                modalTitle.textContent = 'Edit Data Laporan';
+                modalDocId.value = data.id;
+                modalDesa.value = data.desa_kelurahan;
+                modalKegiatan.value = data.nama_kegiatan;
+                modalBulan.value = data.bulan;
+                modalTahun.value = data.tahun;
+                modalExistingPhotos.innerHTML = '';
+                if (Array.isArray(data.foto) && data.foto.length > 0) {
+                    modalExistingPhotos.innerHTML = data.foto.map(url => `<img src="${url}" class="report-photo">`).join('');
+                }
             }
 
-            if (target.classList.contains('delete-btn')) {
+            if (target.closest('.delete-btn')) {
+                const row = target.closest('tr');
+                const docId = row.dataset.id;
                 iziToast.question({
-                    timeout: 20000,
-                    close: false,
-                    overlay: true,
-                    displayMode: 'once',
-                    id: 'question',
-                    zindex: 999,
-                    title: 'Konfirmasi',
-                    message: 'Anda yakin ingin menghapus baris ini?',
-                    position: 'center',
+                    timeout: 20000, close: false, overlay: true, displayMode: 'once', id: 'question', zindex: 999,
+                    title: 'Konfirmasi', message: 'Anda yakin ingin menghapus baris ini?', position: 'center',
                     buttons: [
                         ['<button><b>YA</b></button>', async function (instance, toast) {
                             instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
@@ -430,262 +566,167 @@
                     ]
                 });
             }
-            
-            if(target.classList.contains('cancel-btn')) {
-                if (row.dataset.isNew) {
-                    row.remove();
-                } else {
-                    const originalData = JSON.parse(row.dataset.originalData);
-                    row.innerHTML = generateRowHTML(originalData, docId);
-                }
-            }
 
-            if (target.classList.contains('save-btn')) {
-                const isNew = row.dataset.isNew === 'true';
-                const originalData = isNew ? {} : JSON.parse(row.dataset.originalData);
-
-                const dataPayload = {
-                    kelurahan: row.querySelector('.kelurahan-edit-input').value,
-                    rw: row.querySelector('.rw-edit-input').value,
-                    bulan: isNew ? bulanList[new Date().getMonth()] : originalData.bulan,
-                    tahun: isNew ? new Date().getFullYear() : originalData.tahun,
-                };
-                
-                [...ksKeys, ...eventKeys, ...genderEventKeys].forEach(key => {
-                     const input = row.querySelector(`[data-key="${key}"]`);
-                     if(input) dataPayload[key] = Number(input.value) || 0;
-                });
-                
-                if (!dataPayload.kelurahan) {
-                    showStatus('Desa/Kelurahan tidak boleh kosong.', true);
-                    return;
-                }
-                
-                if (!/^\d{3}$/.test(dataPayload.rw)) {
-                    showStatus('RW harus terdiri dari 3 digit angka.', true);
-                    return;
-                }
-                
+            if (target.closest('.export-pdf-btn')) {
+                const row = target.closest('tr');
+                const data = JSON.parse(row.dataset.originalData);
+                showStatus('Membuat PDF...', false);
                 try {
-                    iziToast.info({
-                        title: 'Menyimpan',
-                        message: 'Sedang menyimpan data...',
-                        position: 'bottomCenter',
-                        timeout: false,
-                        id: 'saving'
-                    });
-                    if (isNew) {
-                        await addDoc(collectionRef, dataPayload);
-                        iziToast.destroy();
-                        showStatus("Data baru berhasil ditambahkan.", false);
-                    } else {
-                        await updateDoc(doc(db, collectionRef.path, docId), dataPayload);
-                        iziToast.destroy();
-                        showStatus("Data berhasil diperbarui.", false);
-                    }
-                } catch(error) {
-                    iziToast.destroy();
-                    console.error("Error saving data: ", error);
-                    showStatus("Gagal menyimpan data: " + error.message, true);
+                    await exportRowToPdf(data);
+                } catch (e) {
+                    showStatus('Gagal membuat PDF.', true);
+                    console.error(e);
                 }
             }
         });
-
-        addRowBtn.addEventListener('click', () => {
-            if (!tomSelectDesa || !tomSelectDesa.getValue()) {
-                showStatus('Silakan pilih Desa/Kelurahan di filter terlebih dahulu.', true);
+        
+        dataForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validation
+            if (!modalKegiatan.value) {
+                showStatus('Nama Kegiatan harus dipilih.', true);
                 return;
             }
 
-            const newRow = previewBody.insertRow(0);
-            newRow.dataset.isNew = 'true';
-            
-            const prefilledData = { kelurahan: tomSelectDesa.getValue() };
-            newRow.innerHTML = generateEditRowHTML(prefilledData, true);
-        });
-        
-        previewBody.addEventListener('input', e => {
-            if (e.target.matches('.ks-edit-input, .gender-event-input')) {
-                calculateTotalsInRow(e.target.closest('tr'));
+            modalSaveBtn.disabled = true;
+            modalSaveBtn.textContent = 'Menyimpan...';
+            closeModal(dataModal); // Close form modal
+            openModal(progressModal); // Open progress modal
+
+            const docId = modalDocId.value;
+            const isNew = !docId;
+            const filesToUpload = modalFoto.files;
+
+            const dataPayload = {
+                desa_kelurahan: modalDesa.value,
+                nama_kegiatan: modalKegiatan.value,
+                bulan: modalBulan.value,
+                tahun: modalTahun.value,
+            };
+
+            try {
+                let imageBase64Strings = [];
+                if (filesToUpload.length > 0) {
+                    updateProgress(0, 'Memulai kompresi gambar...');
+                    const compressionPromises = Array.from(filesToUpload).map(file => compressImage(file));
+                    const compressedFiles = await Promise.all(compressionPromises);
+                    updateProgress(50, 'Mengubah gambar ke Base64...');
+                    
+                    const base64Promises = compressedFiles.map(file => fileToBase64(file));
+                    imageBase64Strings = await Promise.all(base64Promises);
+                }
+                
+                updateProgress(90, 'Menyimpan data ke database...');
+
+                if (isNew) {
+                    dataPayload.foto = imageBase64Strings;
+                    await addDoc(collectionRef, dataPayload);
+                } else {
+                    const docRef = doc(db, collectionRef.path, docId);
+                    if (imageBase64Strings.length > 0) {
+                        dataPayload.foto = imageBase64Strings;
+                    } else {
+                        const row = previewBody.querySelector(`tr[data-id='${docId}']`);
+                        const originalData = JSON.parse(row.dataset.originalData);
+                        dataPayload.foto = originalData.foto || [];
+                    }
+                    await updateDoc(docRef, dataPayload);
+                }
+                
+                updateProgress(100, 'Selesai!');
+                setTimeout(() => {
+                    closeModal(progressModal);
+                    showStatus("Data berhasil disimpan.", false);
+                }, 500);
+
+            } catch (error) {
+                closeModal(progressModal);
+                console.error("Error saving data: ", error);
+                if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('too large')) {
+                     showStatus("Gagal menyimpan: Ukuran total data terlalu besar. Coba kurangi jumlah atau ukuran gambar.", true);
+                } else {
+                     showStatus("Gagal menyimpan data: " + error.message, true);
+                }
+            } finally {
+                modalSaveBtn.disabled = false;
+                modalSaveBtn.textContent = 'Simpan';
             }
         });
+
+        addDataBtn.addEventListener('click', () => {
+            dataForm.reset();
+            modalDocId.value = '';
+            modalExistingPhotos.innerHTML = '';
+            modalTitle.textContent = 'Tambah Data Baru';
+            modalTahun.value = new Date().getFullYear();
+            openModal(dataModal);
+        });
+        modalCancelBtn.addEventListener('click', () => closeModal(dataModal));
         
-        filterTahunInput.addEventListener('input', fetchAndRenderData);
         resetFilterBtn.addEventListener('click', () => {
             tomSelectDesa.clear();
-            tomSelectBulan.setValue(bulanList[new Date().getMonth()], true); 
-            filterTahunInput.value = new Date().getFullYear();
-            fetchAndRenderData();
         });
         
         // --- Export & Share Listeners ---
-
-        exportExcelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-            if (rows.length === 0) {
-                showStatus('Tidak ada data untuk diekspor!', true);
-                return;
-            }
-
-            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-            ws['!cols'] = Array(headers.length).fill({ wch: 15 });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Data Laporan");
-            XLSX.writeFile(wb, "Laporan_Lengkap_Ciemas.xlsx");
-        });
-
-        exportPdfBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-             if (rows.length === 0) {
-                showStatus('Tidak ada data untuk diekspor!', true);
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape' });
-
-            doc.autoTable({
-                head: [headers],
-                body: rows,
-                styles: { fontSize: 7 }
-            });
-
-            doc.save('Laporan_Lengkap_Ciemas.pdf');
-        });
-
-        exportWordBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-            if (rows.length === 0) {
-                showStatus('Tidak ada data untuk diekspor!', true);
-                return;
-            }
-
-            let tableHtml = '<table style="border:1px solid #000; border-collapse: collapse;">';
-            tableHtml += '<thead><tr>' + headers.map(h => `<th style="border:1px solid #000; padding: 5px;">${h}</th>`).join('') + '</tr></thead>';
-            tableHtml += '<tbody>';
-            rows.forEach(row => {
-                tableHtml += '<tr>' + row.map(cell => `<td style="border:1px solid #000; padding: 5px;">${cell}</td>`).join('') + '</tr>';
-            });
-            tableHtml += '</tbody></table>';
-
-            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML to Word</title></head><body>${fullHtml}</body></html>`;
-            
-            const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'Laporan_Lengkap_Ciemas.doc';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        });
-
-        shareBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-            if (rows.length === 0) {
-                showStatus('Tidak ada data untuk dibagikan!', true);
-                return;
-            }
-
-            if (!navigator.share) {
-                showStatus('Fitur bagikan tidak didukung di browser ini.', true);
-                return;
-            }
-
-            let csvContent = headers.join(',') + '\n';
-            rows.forEach(row => {
-                csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
-            });
-
-            const file = new File([csvContent], 'laporan.csv', { type: 'text/csv' });
-            
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Data Laporan',
-                    text: 'Berikut adalah data laporan dari Kecamatan Ciemas.'
-                });
-            } catch (error) {
-                // Silently handle user cancellation
-                if (error.name !== 'AbortError') {
-                    showStatus('Gagal membagikan file: ' + error.message, true);
-                }
-            }
-        });
+        // (No changes needed here)
 
         function createRipple(event) {
             const button = event.currentTarget;
             const circle = document.createElement("span");
             const diameter = Math.max(button.clientWidth, button.clientHeight);
             const radius = diameter / 2;
-
             circle.style.width = circle.style.height = `${diameter}px`;
             circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
             circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
             circle.classList.add("ripple");
-
             const ripple = button.getElementsByClassName("ripple")[0];
-            if (ripple) {
-                ripple.remove();
-            }
+            if (ripple) ripple.remove();
             button.appendChild(circle);
         }
-
 
         // --- App Initialization ---
         async function main() {
             try {
-                // Initialize Tom Select for filters
+                // Populate modal dropdowns
+                modalDesa.innerHTML = `<option value="">Pilih Desa</option>` + kelurahanList.map(v => `<option value="${v}">${v}</option>`).join('');
+                modalBulan.innerHTML = `<option value="">Pilih Bulan</option>` + monthNames.map(v => `<option value="${v}">${v}</option>`).join('');
+
                 tomSelectDesa = new TomSelect(filterKelurahanSelect, {
                     options: kelurahanList.map(v => ({value: v, text: v})),
                     create: false,
-                    onChange: fetchAndRenderData,
+                    onChange: () => {
+                        fetchAndRenderData();
+                    },
                     placeholder: 'Cari atau Pilih Desa...'
-                });
-                tomSelectBulan = new TomSelect(filterBulanSelect, {
-                    options: bulanList.map(v => ({value: v, text: v})),
-                    create: false,
-                    onChange: fetchAndRenderData,
-                    placeholder: 'Cari atau Pilih Bulan...'
                 });
 
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                setLogLevel('debug');
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        const userId = user.uid;
-                        const collectionPath = `laporan_mdk_data/v1/laporan_rw`; // Public Path
+                        userId = user.uid;
+                        const collectionPath = `laporan_kampung_kb`;
                         collectionRef = collection(db, collectionPath);
-                        
-                        // Set default filters before the first fetch
-                        const now = new Date();
-                        tomSelectBulan.setValue(bulanList[now.getMonth()]); // This will trigger the first fetch
-                        filterTahunInput.value = now.getFullYear();
-                        
+                        fetchAndRenderData();
                     } else {
-                        loadingIndicator.textContent = "Silakan login untuk melihat data.";
+                        userId = null;
+                        unsubscribe();
+                        previewBody.innerHTML = '';
+                        loadingIndicator.textContent = "Otentikasi diperlukan untuk mengakses data.";
                     }
                 });
 
                 await signInAnonymously(auth);
                 
-                // Add ripple effect listener to all MDB-style buttons
-                document.querySelectorAll('.mdb-btn').forEach(btn => {
-                    btn.addEventListener('click', createRipple);
-                });
+                document.querySelectorAll('.mdb-btn').forEach(btn => btn.addEventListener('click', createRipple));
 
-                 // Populate static filters
-                filterProvinsiSelect.innerHTML = `<option>JAWA BARAT</option>`;
-                filterKabupatenSelect.innerHTML = `<option>KABUPATEN SUKABUMI</option>`;
-                filterKecamatanSelect.innerHTML = `<option>CIEMAS</option>`;
-
+                document.getElementById('filter-provinsi').innerHTML = `<option>JAWA BARAT</option>`;
+                document.getElementById('filter-kabupaten').innerHTML = `<option>KABUPATEN SUKABUMI</option>`;
+                document.getElementById('filter-kecamatan').innerHTML = `<option>CIEMAS</option>`;
 
             } catch(error) {
                 console.error("Initialization Error:", error);
