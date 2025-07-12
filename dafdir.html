@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Absensi Wajah</title>
+    <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Import library face-api.js -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        /* Custom styles untuk overlay video dan canvas */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        #video, #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #video {
+            object-fit: cover;
+        }
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #3498db;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Aplikasi Absensi Wajah</h1>
+            <p class="text-gray-600 mt-2">Daftarkan wajah terlebih dahulu, lalu mulai absensi menggunakan webcam.</p>
+        </header>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
+            <div class="loader"></div>
+            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model AI...</p>
+        </div>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Kolom Registrasi dan Daftar Hadir -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">1. Registrasi Peserta</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                        <input type="text" id="name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="imageUpload" class="block text-sm font-medium text-gray-700">Unggah Foto Wajah (1 orang)</label>
+                        <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    </div>
+                    <button id="registerButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
+                        Daftarkan Wajah
+                    </button>
+                    <p id="register-status" class="text-center text-sm text-gray-500 h-4"></p>
+                </div>
+
+                <h2 class="text-2xl font-semibold mt-8 mb-4 border-b pb-2">3. Daftar Hadir</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-list" class="divide-y divide-gray-200">
+                            <!-- Daftar hadir akan muncul di sini -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Kolom Absensi Real-time -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">2. Absensi Real-time</h2>
+                <div class="flex justify-center mb-4">
+                    <button id="startButton" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400">
+                        Mulai Absensi via Webcam
+                    </button>
+                </div>
+                <div class="video-container bg-gray-900 aspect-video mx-auto">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+                 <p id="detection-status" class="text-center text-sm text-gray-500 mt-2 h-4"></p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        // --- DOM ELEMENT REFERENCES ---
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startButton = document.getElementById('startButton');
+        const registerButton = document.getElementById('registerButton');
+        const imageUpload = document.getElementById('imageUpload');
+        const nameInput = document.getElementById('name');
+        const attendanceList = document.getElementById('attendance-list');
+        const loadingDiv = document.getElementById('loading');
+        const loadingText = document.getElementById('loading-text');
+        const registerStatus = document.getElementById('register-status');
+        const detectionStatus = document.getElementById('detection-status');
+
+        // --- STATE MANAGEMENT ---
+        let registeredStudents = [];
+        let faceMatcher = null;
+        let recognitionInterval = null;
+
+        // --- INITIALIZATION ---
+        // Fungsi untuk memuat semua model face-api.js
+        async function loadModels() {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL)
+                ]);
+                loadingText.innerText = 'Model berhasil dimuat. Aplikasi siap digunakan.';
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none';
+                }, 1500);
+            } catch (error) {
+                console.error("Gagal memuat model:", error);
+                loadingText.innerText = 'Gagal memuat model AI. Coba segarkan halaman.';
+            }
+        }
+        
+        // Panggil fungsi loadModels saat halaman dimuat
+        loadModels();
+
+        // --- CORE FUNCTIONS ---
+
+        // Fungsi untuk mendapatkan deskriptor wajah dari gambar yang diunggah
+        async function getLabeledFaceDescriptions() {
+            const descriptions = [];
+            for (const student of registeredStudents) {
+                if (student.descriptor) {
+                    descriptions.push(new faceapi.LabeledFaceDescriptors(student.name, [student.descriptor]));
+                }
+            }
+            return descriptions;
+        }
+
+        // Fungsi untuk memperbarui FaceMatcher
+        async function updateFaceMatcher() {
+            const labeledDescriptors = await getLabeledFaceDescriptions();
+            if (labeledDescriptors.length > 0) {
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6); // Threshold 0.6
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // Event listener untuk tombol registrasi
+        registerButton.addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            const file = imageUpload.files[0];
+
+            if (!name || !file) {
+                registerStatus.innerText = 'Nama dan file gambar harus diisi.';
+                return;
+            }
+
+            registerStatus.innerText = 'Memproses gambar...';
+            registerButton.disabled = true;
+
+            try {
+                const image = await faceapi.bufferToImage(file);
+                // Deteksi wajah dengan deskriptornya
+                const detection = await faceapi.detectSingleFace(image, new faceapi.SsdMobilenetv1Options())
+                                               .withFaceLandmarks()
+                                               .withFaceDescriptor();
+
+                if (!detection) {
+                    registerStatus.innerText = 'Wajah tidak terdeteksi di gambar.';
+                    return;
+                }
+                
+                // Cek apakah nama sudah terdaftar
+                if(registeredStudents.find(s => s.name.toLowerCase() === name.toLowerCase())){
+                    registerStatus.innerText = `Nama "${name}" sudah terdaftar.`;
+                    return;
+                }
+
+                // Simpan data peserta
+                registeredStudents.push({ name: name, descriptor: detection.descriptor, present: false });
+                
+                // Tambahkan ke daftar hadir di UI
+                const row = document.createElement('tr');
+                row.setAttribute('data-name', name);
+                row.innerHTML = `
+                    <td class="py-4 px-6 text-sm font-medium text-gray-900">${name}</td>
+                    <td class="py-4 px-6 text-sm text-gray-500">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Belum Hadir
+                        </span>
+                    </td>
+                `;
+                attendanceList.appendChild(row);
+
+                // Perbarui face matcher
+                await updateFaceMatcher();
+
+                registerStatus.innerText = `"${name}" berhasil didaftarkan!`;
+                nameInput.value = '';
+                imageUpload.value = '';
+
+            } catch (error) {
+                console.error("Error saat registrasi:", error);
+                registerStatus.innerText = 'Terjadi kesalahan saat memproses.';
+            } finally {
+                registerButton.disabled = false;
+                 setTimeout(() => registerStatus.innerText = '', 3000);
+            }
+        });
+
+        // Event listener untuk memulai webcam
+        startButton.addEventListener('click', async () => {
+            if (registeredStudents.length === 0) {
+                detectionStatus.innerText = "Daftarkan setidaknya satu wajah terlebih dahulu.";
+                setTimeout(() => detectionStatus.innerText = '', 3000);
+                return;
+            }
+
+            if (recognitionInterval) {
+                clearInterval(recognitionInterval);
+                recognitionInterval = null;
+                video.srcObject.getTracks().forEach(track => track.stop());
+                startButton.innerText = "Mulai Absensi via Webcam";
+                startButton.classList.replace('bg-red-600', 'bg-green-600');
+                startButton.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+            
+            startButton.innerText = "Mengakses Webcam...";
+            startButton.disabled = true;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+                startButton.innerText = "Hentikan Absensi";
+                startButton.classList.replace('bg-green-600', 'bg-red-600');
+                startButton.classList.replace('hover:bg-green-700', 'hover:bg-red-700');
+
+            } catch (err) {
+                console.error("Error mengakses webcam: ", err);
+                detectionStatus.innerText = "Gagal mengakses webcam.";
+                startButton.innerText = "Mulai Absensi via Webcam";
+            } finally {
+                startButton.disabled = false;
+            }
+        });
+
+        // Event listener saat video mulai diputar
+        video.addEventListener('play', () => {
+            const displaySize = { width: video.clientWidth, height: video.clientHeight };
+            faceapi.matchDimensions(canvas, displaySize);
+            
+            recognitionInterval = setInterval(async () => {
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                                                .withFaceLandmarks()
+                                                .withFaceDescriptors();
+                
+                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (faceMatcher && resizedDetections.length > 0) {
+                    detectionStatus.innerText = `${resizedDetections.length} wajah terdeteksi.`;
+                    const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
+                    
+                    results.forEach((result, i) => {
+                        const box = resizedDetections[i].detection.box;
+                        const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() });
+                        drawBox.draw(canvas);
+
+                        // Update status kehadiran jika wajah dikenali
+                        if (result.label !== 'unknown') {
+                            const student = registeredStudents.find(s => s.name === result.label);
+                            if (student && !student.present) {
+                                student.present = true;
+                                const row = attendanceList.querySelector(`tr[data-name="${result.label}"]`);
+                                if (row) {
+                                    row.cells[1].innerHTML = `
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            Hadir
+                                        </span>
+                                    `;
+                                    row.classList.add('bg-green-50');
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    detectionStatus.innerText = 'Arahkan wajah ke kamera...';
+                }
+            }, 200); // Deteksi setiap 200 milidetik
+        });
+    </script>
+</body>
+</html>
