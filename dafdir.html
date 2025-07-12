@@ -8,6 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Import library face-api.js -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <!-- Import iziToast untuk notifikasi -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <!-- Import SheetJS (XLSX) untuk membuat file Excel/CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* Custom styles untuk overlay video dan canvas */
         .video-container {
@@ -45,7 +50,7 @@
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Aplikasi Absensi Wajah</h1>
-            <p class="text-gray-600 mt-2">Daftarkan wajah terlebih dahulu, lalu mulai absensi menggunakan webcam.</p>
+            <p class="text-gray-600 mt-2">Daftarkan wajah, ekspor data untuk backup, lalu mulai absensi.</p>
         </header>
 
         <!-- Loading Indicator -->
@@ -55,43 +60,51 @@
         </div>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Kolom Registrasi dan Daftar Hadir -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">1. Registrasi Peserta</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
-                        <input type="text" id="name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            <!-- Kolom Kiri: Registrasi, Backup, dan Rekap -->
+            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col space-y-8">
+                <div>
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">1. Registrasi & Backup</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                            <input type="text" id="name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="imageUpload" class="block text-sm font-medium text-gray-700">Unggah Foto Wajah (1 orang)</label>
+                            <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        </div>
+                        <button id="registerButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
+                            Daftarkan Wajah
+                        </button>
+                        <p id="register-status" class="text-center text-sm text-gray-500 h-4"></p>
                     </div>
-                    <div>
-                        <label for="imageUpload" class="block text-sm font-medium text-gray-700">Unggah Foto Wajah (1 orang)</label>
-                        <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    <!-- Bagian Backup dan Restore Data -->
+                    <div class="mt-6 pt-6 border-t">
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button id="exportButton" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Ekspor Data Peserta
+                            </button>
+                            <label for="importFile" class="w-full text-center bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 cursor-pointer">
+                                Impor Data Peserta
+                            </label>
+                            <input type="file" id="importFile" class="hidden" accept=".json">
+                        </div>
                     </div>
-                    <button id="registerButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
-                        Daftarkan Wajah
-                    </button>
-                    <p id="register-status" class="text-center text-sm text-gray-500 h-4"></p>
                 </div>
-
-                <h2 class="text-2xl font-semibold mt-8 mb-4 border-b pb-2">3. Daftar Hadir</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="attendance-list" class="divide-y divide-gray-200">
-                            <!-- Daftar hadir akan muncul di sini -->
-                        </tbody>
-                    </table>
+                 <!-- Bagian Rekap -->
+                <div class="pt-6 border-t">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">2. Laporan</h2>
+                     <div class="grid grid-cols-1 gap-4">
+                        <button id="exportExcelButton" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                            Ekspor Rekap (Excel)
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Kolom Absensi Real-time -->
+            <!-- Kolom Kanan: Absensi Real-time dan Daftar Hadir -->
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">2. Absensi Real-time</h2>
+                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Absensi Real-time</h2>
                 <div class="flex justify-center mb-4">
                     <button id="startButton" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400">
                         Mulai Absensi via Webcam
@@ -102,6 +115,27 @@
                     <canvas id="canvas"></canvas>
                 </div>
                  <p id="detection-status" class="text-center text-sm text-gray-500 mt-2 h-4"></p>
+                
+                <!-- Daftar Hadir dipindahkan ke sini -->
+                <div class="mt-8">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Daftar Hadir Hari Ini</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hari</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-list" class="divide-y divide-gray-200">
+                                <!-- Daftar hadir akan muncul di sini dari localStorage -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -119,14 +153,157 @@
         const loadingText = document.getElementById('loading-text');
         const registerStatus = document.getElementById('register-status');
         const detectionStatus = document.getElementById('detection-status');
+        const exportButton = document.getElementById('exportButton');
+        const importFile = document.getElementById('importFile');
+        const exportExcelButton = document.getElementById('exportExcelButton');
+
 
         // --- STATE MANAGEMENT ---
         let registeredStudents = [];
         let faceMatcher = null;
         let recognitionInterval = null;
+        const STUDENTS_STORAGE_KEY = 'faceAttendanceApp_students';
+        const DATE_STORAGE_KEY = 'faceAttendanceApp_lastResetDate';
+        let synthVoices = [];
+
+        // --- NOTIFICATION FUNCTION ---
+        function showSuccessNotification(name) {
+            iziToast.success({
+                title: 'Berhasil',
+                message: `${name}, absensi Anda telah dicatat.`,
+                position: 'topRight',
+                timeout: 5000,
+            });
+        }
+
+        // --- AUDIO FUNCTION (Browser Speech Synthesis) ---
+        function loadVoices() {
+            synthVoices = window.speechSynthesis.getVoices();
+        }
+        
+        // Memuat suara yang tersedia di browser
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+        }
+
+        function playSuccessSound(name) {
+            if ('speechSynthesis' in window) {
+                // Hentikan suara yang mungkin sedang berjalan
+                window.speechSynthesis.cancel();
+
+                // Buat kalimat yang akan diucapkan
+                const textToSpeak = `${name}, Anda sudah berhasil absensi untuk hari ini.`;
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                
+                // Atur properti suara
+                utterance.lang = 'id-ID'; // Set bahasa ke Indonesia
+                utterance.rate = 0.9;     // Kecepatan bicara, sedikit lebih lambat agar jelas
+                utterance.pitch = 1;      // Nada suara normal
+
+                // Coba cari suara wanita berbahasa Indonesia
+                let selectedVoice = synthVoices.find(voice => voice.lang === 'id-ID' && voice.name.includes('Female'));
+                if (!selectedVoice) {
+                    selectedVoice = synthVoices.find(voice => voice.lang === 'id-ID' && voice.name.includes('Google'));
+                }
+                if (!selectedVoice) {
+                    selectedVoice = synthVoices.find(voice => voice.lang === 'id-ID');
+                }
+
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                } else {
+                    console.warn("Tidak ditemukan suara berbahasa Indonesia. Menggunakan suara default.");
+                }
+
+                // Ucapkan kalimat
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.error("Speech Synthesis tidak didukung di browser ini.");
+            }
+        }
+
+        // --- LOCALSTORAGE & DATE FUNCTIONS ---
+        function getTodayDateString() {
+            return new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+        }
+
+        function saveDataToLocalStorage() {
+            const savableData = registeredStudents.map(student => ({
+                name: student.name,
+                descriptor: Array.from(student.descriptor),
+                present: student.present,
+                hari: student.hari,
+                tanggal: student.tanggal,
+                jam: student.jam
+            }));
+            localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(savableData));
+        }
+
+        function loadAndResetData() {
+            const today = getTodayDateString();
+            const lastResetDate = localStorage.getItem(DATE_STORAGE_KEY);
+            const data = localStorage.getItem(STUDENTS_STORAGE_KEY);
+
+            if (data) {
+                const parsedData = JSON.parse(data);
+                const isNewDay = lastResetDate !== today;
+
+                if (isNewDay) {
+                    console.log("Hari baru terdeteksi. Mereset status kehadiran.");
+                }
+
+                registeredStudents = parsedData.map(student => ({
+                    name: student.name,
+                    descriptor: new Float32Array(student.descriptor),
+                    present: isNewDay ? false : (student.present || false),
+                    hari: isNewDay ? '' : (student.hari || ''),
+                    tanggal: isNewDay ? '' : (student.tanggal || ''),
+                    jam: isNewDay ? '' : (student.jam || '')
+                }));
+
+                if (isNewDay) {
+                    saveDataToLocalStorage();
+                    localStorage.setItem(DATE_STORAGE_KEY, today);
+                }
+            }
+        }
+        
+        function renderAttendanceList() {
+            attendanceList.innerHTML = '';
+            registeredStudents.forEach(student => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-name', student.name);
+                
+                let statusBadge;
+                if (student.present) {
+                    statusBadge = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>`;
+                    row.classList.add('bg-green-50');
+                } else {
+                    statusBadge = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Belum Hadir</span>`;
+                }
+
+                row.innerHTML = `
+                    <td class="py-4 px-6 text-sm font-medium text-gray-900">${student.name}</td>
+                    <td class="py-4 px-6 text-sm text-gray-500">${statusBadge}</td>
+                    <td class="py-4 px-6 text-sm text-gray-700">${student.hari || '-'}</td>
+                    <td class="py-4 px-6 text-sm text-gray-700">${student.tanggal || '-'}</td>
+                    <td class="py-4 px-6 text-sm text-gray-700">${student.jam || '-'}</td>
+                `;
+                attendanceList.appendChild(row);
+            });
+        }
 
         // --- INITIALIZATION ---
-        // Fungsi untuk memuat semua model face-api.js
+        async function initializeApp() {
+            await loadModels();
+            loadAndResetData();
+            renderAttendanceList();
+            await updateFaceMatcher();
+        }
+
         async function loadModels() {
             const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
             try {
@@ -146,39 +323,31 @@
             }
         }
         
-        // Panggil fungsi loadModels saat halaman dimuat
-        loadModels();
+        initializeApp();
 
         // --- CORE FUNCTIONS ---
-
-        // Fungsi untuk mendapatkan deskriptor wajah dari gambar yang diunggah
         async function getLabeledFaceDescriptions() {
-            const descriptions = [];
-            for (const student of registeredStudents) {
-                if (student.descriptor) {
-                    descriptions.push(new faceapi.LabeledFaceDescriptors(student.name, [student.descriptor]));
-                }
-            }
-            return descriptions;
+            return registeredStudents.map(student => 
+                new faceapi.LabeledFaceDescriptors(student.name, [student.descriptor])
+            );
         }
 
-        // Fungsi untuk memperbarui FaceMatcher
         async function updateFaceMatcher() {
             const labeledDescriptors = await getLabeledFaceDescriptions();
             if (labeledDescriptors.length > 0) {
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6); // Threshold 0.6
+                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+            } else {
+                faceMatcher = null;
             }
         }
 
         // --- EVENT LISTENERS ---
-
-        // Event listener untuk tombol registrasi
         registerButton.addEventListener('click', async () => {
             const name = nameInput.value.trim();
             const file = imageUpload.files[0];
 
             if (!name || !file) {
-                registerStatus.innerText = 'Nama dan file gambar harus diisi.';
+                iziToast.warning({ title: 'Input Tidak Lengkap', message: 'Nama dan file gambar harus diisi.' });
                 return;
             }
 
@@ -187,66 +356,54 @@
 
             try {
                 const image = await faceapi.bufferToImage(file);
-                // Deteksi wajah dengan deskriptornya
                 const detection = await faceapi.detectSingleFace(image, new faceapi.SsdMobilenetv1Options())
                                                .withFaceLandmarks()
                                                .withFaceDescriptor();
 
                 if (!detection) {
-                    registerStatus.innerText = 'Wajah tidak terdeteksi di gambar.';
+                    iziToast.error({ title: 'Gagal', message: 'Wajah tidak terdeteksi di gambar.' });
+                    registerStatus.innerText = '';
                     return;
                 }
                 
-                // Cek apakah nama sudah terdaftar
                 if(registeredStudents.find(s => s.name.toLowerCase() === name.toLowerCase())){
-                    registerStatus.innerText = `Nama "${name}" sudah terdaftar.`;
+                    iziToast.warning({ title: 'Duplikat', message: `Nama "${name}" sudah terdaftar.` });
+                    registerStatus.innerText = '';
                     return;
                 }
 
-                // Simpan data peserta
                 registeredStudents.push({ name: name, descriptor: detection.descriptor, present: false });
                 
-                // Tambahkan ke daftar hadir di UI
-                const row = document.createElement('tr');
-                row.setAttribute('data-name', name);
-                row.innerHTML = `
-                    <td class="py-4 px-6 text-sm font-medium text-gray-900">${name}</td>
-                    <td class="py-4 px-6 text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            Belum Hadir
-                        </span>
-                    </td>
-                `;
-                attendanceList.appendChild(row);
-
-                // Perbarui face matcher
+                saveDataToLocalStorage();
+                renderAttendanceList();
                 await updateFaceMatcher();
 
-                registerStatus.innerText = `"${name}" berhasil didaftarkan!`;
+                iziToast.success({ title: 'Berhasil', message: `"${name}" berhasil didaftarkan!` });
+                registerStatus.innerText = '';
                 nameInput.value = '';
                 imageUpload.value = '';
 
             } catch (error) {
                 console.error("Error saat registrasi:", error);
-                registerStatus.innerText = 'Terjadi kesalahan saat memproses.';
+                iziToast.error({ title: 'Error', message: 'Terjadi kesalahan saat memproses gambar.' });
+                registerStatus.innerText = '';
             } finally {
                 registerButton.disabled = false;
-                 setTimeout(() => registerStatus.innerText = '', 3000);
             }
         });
 
-        // Event listener untuk memulai webcam
         startButton.addEventListener('click', async () => {
             if (registeredStudents.length === 0) {
-                detectionStatus.innerText = "Daftarkan setidaknya satu wajah terlebih dahulu.";
-                setTimeout(() => detectionStatus.innerText = '', 3000);
+                iziToast.info({ title: 'Info', message: 'Daftarkan atau impor data wajah terlebih dahulu.' });
                 return;
             }
 
             if (recognitionInterval) {
                 clearInterval(recognitionInterval);
                 recognitionInterval = null;
-                video.srcObject.getTracks().forEach(track => track.stop());
+                if(video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                }
                 startButton.innerText = "Mulai Absensi via Webcam";
                 startButton.classList.replace('bg-red-600', 'bg-green-600');
                 startButton.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
@@ -267,14 +424,13 @@
 
             } catch (err) {
                 console.error("Error mengakses webcam: ", err);
-                detectionStatus.innerText = "Gagal mengakses webcam.";
+                iziToast.error({ title: 'Error', message: 'Gagal mengakses webcam. Pastikan Anda memberikan izin.' });
                 startButton.innerText = "Mulai Absensi via Webcam";
             } finally {
                 startButton.disabled = false;
             }
         });
 
-        // Event listener saat video mulai diputar
         video.addEventListener('play', () => {
             const displaySize = { width: video.clientWidth, height: video.clientHeight };
             faceapi.matchDimensions(canvas, displaySize);
@@ -297,27 +453,104 @@
                         const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() });
                         drawBox.draw(canvas);
 
-                        // Update status kehadiran jika wajah dikenali
                         if (result.label !== 'unknown') {
                             const student = registeredStudents.find(s => s.name === result.label);
                             if (student && !student.present) {
+                                const now = new Date();
                                 student.present = true;
-                                const row = attendanceList.querySelector(`tr[data-name="${result.label}"]`);
-                                if (row) {
-                                    row.cells[1].innerHTML = `
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                            Hadir
-                                        </span>
-                                    `;
-                                    row.classList.add('bg-green-50');
-                                }
+                                student.hari = now.toLocaleDateString('id-ID', { weekday: 'long' });
+                                student.tanggal = now.toLocaleDateString('id-ID');
+                                student.jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+                                showSuccessNotification(student.name);
+                                playSuccessSound(student.name);
+                                saveDataToLocalStorage();
+                                renderAttendanceList();
                             }
                         }
                     });
                 } else {
                     detectionStatus.innerText = 'Arahkan wajah ke kamera...';
                 }
-            }, 200); // Deteksi setiap 200 milidetik
+            }, 200);
+        });
+
+        // --- EXPORT/IMPORT LISTENERS ---
+        exportButton.addEventListener('click', () => {
+            if (registeredStudents.length === 0) {
+                iziToast.info({ title: 'Info', message: 'Tidak ada data peserta untuk diekspor.' });
+                return;
+            }
+            // Ekspor hanya nama dan deskriptor, tanpa status kehadiran
+            const dataToExport = registeredStudents.map(s => ({name: s.name, descriptor: Array.from(s.descriptor)}));
+            const dataStr = JSON.stringify(dataToExport);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `data_peserta_absensi_${getTodayDateString()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            iziToast.success({ title: 'Berhasil', message: 'Data peserta telah diekspor.' });
+        });
+
+        importFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data) || data.some(item => !item.name || !item.descriptor)) {
+                        throw new Error('Format file tidak valid.');
+                    }
+                    
+                    const userConfirmed = confirm('Ini akan menimpa semua data peserta yang ada. Lanjutkan?');
+                    if (userConfirmed) {
+                        localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(data));
+                        loadAndResetData();
+                        renderAttendanceList();
+                        await updateFaceMatcher();
+                        iziToast.success({ title: 'Berhasil', message: `${data.length} data peserta berhasil diimpor.` });
+                    }
+                } catch (error) {
+                    console.error("Gagal mengimpor data:", error);
+                    iziToast.error({ title: 'Gagal', message: `File tidak dapat diimpor. Pastikan formatnya benar. (${error.message})` });
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // --- REKAP EXCEL LISTENER ---
+        exportExcelButton.addEventListener('click', () => {
+            if (registeredStudents.length === 0) {
+                iziToast.info({ title: 'Info', message: 'Tidak ada data absensi untuk direkap.' });
+                return;
+            }
+
+            // Siapkan data untuk sheet
+            const dataForSheet = registeredStudents.map(student => ({
+                Nama: student.name,
+                Status: student.present ? 'Hadir' : 'Belum Hadir',
+                Hari: student.hari || '-',
+                Tanggal: student.tanggal || '-',
+                Jam: student.jam || '-'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Absensi');
+
+            // Unduh file
+            XLSX.writeFile(workbook, `Rekap_Absensi_${getTodayDateString()}.xlsx`);
+            iziToast.success({ title: 'Berhasil', message: 'File rekap berhasil dibuat.' });
         });
     </script>
 </body>
