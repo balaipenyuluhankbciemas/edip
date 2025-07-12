@@ -13,6 +13,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
     <!-- Import SheetJS (XLSX) untuk membuat file Excel/CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Import jsPDF dan jsPDF-AutoTable untuk membuat file PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.autotable.min.js"></script>
     <style>
         /* Custom styles untuk overlay video dan canvas */
         .video-container {
@@ -116,9 +119,14 @@
                 </div>
                  <p id="detection-status" class="text-center text-sm text-gray-500 mt-2 h-4"></p>
                 
-                <!-- Daftar Hadir dipindahkan ke sini -->
+                <!-- Daftar Hadir -->
                 <div class="mt-8">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Daftar Hadir Hari Ini</h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Daftar Hadir Hari Ini</h2>
+                        <button id="exportPdfButton" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Rekap PDF
+                        </button>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white">
                             <thead class="bg-gray-50">
@@ -156,6 +164,7 @@
         const exportButton = document.getElementById('exportButton');
         const importFile = document.getElementById('importFile');
         const exportExcelButton = document.getElementById('exportExcelButton');
+        const exportPdfButton = document.getElementById('exportPdfButton');
 
 
         // --- STATE MANAGEMENT ---
@@ -181,7 +190,6 @@
             synthVoices = window.speechSynthesis.getVoices();
         }
         
-        // Memuat suara yang tersedia di browser
         if ('speechSynthesis' in window) {
             loadVoices();
             if (window.speechSynthesis.onvoiceschanged !== undefined) {
@@ -191,34 +199,18 @@
 
         function playSuccessSound(name) {
             if ('speechSynthesis' in window) {
-                // Hentikan suara yang mungkin sedang berjalan
                 window.speechSynthesis.cancel();
-
-                // Buat kalimat yang akan diucapkan
                 const textToSpeak = `${name}, Anda sudah berhasil absensi untuk hari ini.`;
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                
-                // Atur properti suara
-                utterance.lang = 'id-ID'; // Set bahasa ke Indonesia
-                utterance.rate = 0.9;     // Kecepatan bicara, sedikit lebih lambat agar jelas
-                utterance.pitch = 1;      // Nada suara normal
-
-                // Coba cari suara wanita berbahasa Indonesia
-                let selectedVoice = synthVoices.find(voice => voice.lang === 'id-ID' && voice.name.includes('Female'));
-                if (!selectedVoice) {
-                    selectedVoice = synthVoices.find(voice => voice.lang === 'id-ID' && voice.name.includes('Google'));
-                }
-                if (!selectedVoice) {
-                    selectedVoice = synthVoices.find(voice => voice.lang === 'id-ID');
-                }
-
+                utterance.lang = 'id-ID';
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                let selectedVoice = synthVoices.find(voice => voice.lang === 'id-ID' && voice.name.includes('Female')) || synthVoices.find(voice => voice.lang === 'id-ID' && voice.name.includes('Google')) || synthVoices.find(voice => voice.lang === 'id-ID');
                 if (selectedVoice) {
                     utterance.voice = selectedVoice;
                 } else {
                     console.warn("Tidak ditemukan suara berbahasa Indonesia. Menggunakan suara default.");
                 }
-
-                // Ucapkan kalimat
                 window.speechSynthesis.speak(utterance);
             } else {
                 console.error("Speech Synthesis tidak didukung di browser ini.");
@@ -227,7 +219,7 @@
 
         // --- LOCALSTORAGE & DATE FUNCTIONS ---
         function getTodayDateString() {
-            return new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+            return new Date().toISOString().split('T')[0];
         }
 
         function saveDataToLocalStorage() {
@@ -250,11 +242,7 @@
             if (data) {
                 const parsedData = JSON.parse(data);
                 const isNewDay = lastResetDate !== today;
-
-                if (isNewDay) {
-                    console.log("Hari baru terdeteksi. Mereset status kehadiran.");
-                }
-
+                if (isNewDay) console.log("Hari baru terdeteksi. Mereset status kehadiran.");
                 registeredStudents = parsedData.map(student => ({
                     name: student.name,
                     descriptor: new Float32Array(student.descriptor),
@@ -263,7 +251,6 @@
                     tanggal: isNewDay ? '' : (student.tanggal || ''),
                     jam: isNewDay ? '' : (student.jam || '')
                 }));
-
                 if (isNewDay) {
                     saveDataToLocalStorage();
                     localStorage.setItem(DATE_STORAGE_KEY, today);
@@ -276,15 +263,8 @@
             registeredStudents.forEach(student => {
                 const row = document.createElement('tr');
                 row.setAttribute('data-name', student.name);
-                
-                let statusBadge;
-                if (student.present) {
-                    statusBadge = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>`;
-                    row.classList.add('bg-green-50');
-                } else {
-                    statusBadge = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Belum Hadir</span>`;
-                }
-
+                let statusBadge = student.present ? `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>` : `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Belum Hadir</span>`;
+                if (student.present) row.classList.add('bg-green-50');
                 row.innerHTML = `
                     <td class="py-4 px-6 text-sm font-medium text-gray-900">${student.name}</td>
                     <td class="py-4 px-6 text-sm text-gray-500">${statusBadge}</td>
@@ -345,44 +325,33 @@
         registerButton.addEventListener('click', async () => {
             const name = nameInput.value.trim();
             const file = imageUpload.files[0];
-
             if (!name || !file) {
                 iziToast.warning({ title: 'Input Tidak Lengkap', message: 'Nama dan file gambar harus diisi.' });
                 return;
             }
-
             registerStatus.innerText = 'Memproses gambar...';
             registerButton.disabled = true;
-
             try {
                 const image = await faceapi.bufferToImage(file);
-                const detection = await faceapi.detectSingleFace(image, new faceapi.SsdMobilenetv1Options())
-                                               .withFaceLandmarks()
-                                               .withFaceDescriptor();
-
+                const detection = await faceapi.detectSingleFace(image, new faceapi.SsdMobilenetv1Options()).withFaceLandmarks().withFaceDescriptor();
                 if (!detection) {
                     iziToast.error({ title: 'Gagal', message: 'Wajah tidak terdeteksi di gambar.' });
                     registerStatus.innerText = '';
                     return;
                 }
-                
                 if(registeredStudents.find(s => s.name.toLowerCase() === name.toLowerCase())){
                     iziToast.warning({ title: 'Duplikat', message: `Nama "${name}" sudah terdaftar.` });
                     registerStatus.innerText = '';
                     return;
                 }
-
                 registeredStudents.push({ name: name, descriptor: detection.descriptor, present: false });
-                
                 saveDataToLocalStorage();
                 renderAttendanceList();
                 await updateFaceMatcher();
-
                 iziToast.success({ title: 'Berhasil', message: `"${name}" berhasil didaftarkan!` });
                 registerStatus.innerText = '';
                 nameInput.value = '';
                 imageUpload.value = '';
-
             } catch (error) {
                 console.error("Error saat registrasi:", error);
                 iziToast.error({ title: 'Error', message: 'Terjadi kesalahan saat memproses gambar.' });
@@ -397,31 +366,24 @@
                 iziToast.info({ title: 'Info', message: 'Daftarkan atau impor data wajah terlebih dahulu.' });
                 return;
             }
-
             if (recognitionInterval) {
                 clearInterval(recognitionInterval);
                 recognitionInterval = null;
-                if(video.srcObject) {
-                    video.srcObject.getTracks().forEach(track => track.stop());
-                }
+                if(video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
                 startButton.innerText = "Mulai Absensi via Webcam";
                 startButton.classList.replace('bg-red-600', 'bg-green-600');
                 startButton.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                 return;
             }
-            
             startButton.innerText = "Mengakses Webcam...";
             startButton.disabled = true;
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
                 video.srcObject = stream;
                 startButton.innerText = "Hentikan Absensi";
                 startButton.classList.replace('bg-green-600', 'bg-red-600');
                 startButton.classList.replace('hover:bg-green-700', 'hover:bg-red-700');
-
             } catch (err) {
                 console.error("Error mengakses webcam: ", err);
                 iziToast.error({ title: 'Error', message: 'Gagal mengakses webcam. Pastikan Anda memberikan izin.' });
@@ -434,25 +396,17 @@
         video.addEventListener('play', () => {
             const displaySize = { width: video.clientWidth, height: video.clientHeight };
             faceapi.matchDimensions(canvas, displaySize);
-            
             recognitionInterval = setInterval(async () => {
-                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                                                .withFaceLandmarks()
-                                                .withFaceDescriptors();
-                
+                const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-
                 if (faceMatcher && resizedDetections.length > 0) {
                     detectionStatus.innerText = `${resizedDetections.length} wajah terdeteksi.`;
                     const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
-                    
                     results.forEach((result, i) => {
                         const box = resizedDetections[i].detection.box;
-                        const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() });
-                        drawBox.draw(canvas);
-
+                        new faceapi.draw.DrawBox(box, { label: result.toString() }).draw(canvas);
                         if (result.label !== 'unknown') {
                             const student = registeredStudents.find(s => s.name === result.label);
                             if (student && !student.present) {
@@ -461,7 +415,6 @@
                                 student.hari = now.toLocaleDateString('id-ID', { weekday: 'long' });
                                 student.tanggal = now.toLocaleDateString('id-ID');
                                 student.jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
                                 showSuccessNotification(student.name);
                                 playSuccessSound(student.name);
                                 saveDataToLocalStorage();
@@ -481,7 +434,6 @@
                 iziToast.info({ title: 'Info', message: 'Tidak ada data peserta untuk diekspor.' });
                 return;
             }
-            // Ekspor hanya nama dan deskriptor, tanpa status kehadiran
             const dataToExport = registeredStudents.map(s => ({name: s.name, descriptor: Array.from(s.descriptor)}));
             const dataStr = JSON.stringify(dataToExport);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -498,10 +450,7 @@
 
         importFile.addEventListener('change', (event) => {
             const file = event.target.files[0];
-            if (!file) {
-                return;
-            }
-
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
@@ -509,9 +458,7 @@
                     if (!Array.isArray(data) || data.some(item => !item.name || !item.descriptor)) {
                         throw new Error('Format file tidak valid.');
                     }
-                    
-                    const userConfirmed = confirm('Ini akan menimpa semua data peserta yang ada. Lanjutkan?');
-                    if (userConfirmed) {
+                    if (confirm('Ini akan menimpa semua data peserta yang ada. Lanjutkan?')) {
                         localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(data));
                         loadAndResetData();
                         renderAttendanceList();
@@ -534,8 +481,6 @@
                 iziToast.info({ title: 'Info', message: 'Tidak ada data absensi untuk direkap.' });
                 return;
             }
-
-            // Siapkan data untuk sheet
             const dataForSheet = registeredStudents.map(student => ({
                 Nama: student.name,
                 Status: student.present ? 'Hadir' : 'Belum Hadir',
@@ -543,14 +488,48 @@
                 Tanggal: student.tanggal || '-',
                 Jam: student.jam || '-'
             }));
-
             const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Absensi');
-
-            // Unduh file
             XLSX.writeFile(workbook, `Rekap_Absensi_${getTodayDateString()}.xlsx`);
             iziToast.success({ title: 'Berhasil', message: 'File rekap berhasil dibuat.' });
+        });
+        
+        // --- REKAP PDF LISTENER ---
+        exportPdfButton.addEventListener('click', () => {
+            if (registeredStudents.length === 0) {
+                iziToast.info({ title: 'Info', message: 'Tidak ada data absensi untuk direkap.' });
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const tableColumn = ["Nama", "Status", "Hari", "Tanggal", "Jam"];
+            const tableRows = [];
+
+            registeredStudents.forEach(student => {
+                const studentData = [
+                    student.name,
+                    student.present ? 'Hadir' : 'Belum Hadir',
+                    student.hari || '-',
+                    student.tanggal || '-',
+                    student.jam || '-'
+                ];
+                tableRows.push(studentData);
+            });
+
+            doc.setFontSize(18);
+            doc.text("Rekapitulasi Daftar Hadir", 14, 22);
+            
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 30,
+            });
+            
+            doc.save(`Rekap_Absensi_${getTodayDateString()}.pdf`);
+            iziToast.success({ title: 'Berhasil', message: 'File PDF rekap berhasil dibuat.' });
         });
     </script>
 </body>
