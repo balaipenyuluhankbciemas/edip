@@ -526,12 +526,7 @@
             
             return `
                 <td class="px-2 py-1 text-center">
-                    <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2 inline-flex items-center justify-center">
-                        <span class="btn-text">${isNew ? 'Tambah' : 'Simpan'}</span>
-                        <span class="spinner hidden ml-1">
-                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        </span>
-                    </button>
+                    <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2">${isNew ? 'Tambah' : 'Simpan'}</button>
                     <button class="cancel-btn text-btn text-gray-600 hover:text-gray-900">Batal</button>
                 </td>
                 <td class="px-2 py-1"><select class="edit-input w-full kelurahan-edit-input" ${isNew ? '' : 'disabled'}>${kelurahanList.map(k => `<option value="${k}" ${k === data.kelurahan ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
@@ -971,12 +966,8 @@
             } else if (target.closest('.coord-cell')) {
                 openMapModal(target.closest('.coord-cell').dataset.coord, target.closest('.coord-cell').dataset.name);
             } else if (saveBtn) {
-                const btnText = saveBtn.querySelector('.btn-text');
-                const spinner = saveBtn.querySelector('.spinner');
-                
                 saveBtn.disabled = true;
-                btnText.classList.add('hidden');
-                spinner.classList.remove('hidden');
+                saveBtn.textContent = 'Menyimpan...';
 
                 const isNew = row.dataset.isNew === 'true';
                 const originalData = isNew ? {} : JSON.parse(row.dataset.originalData);
@@ -1010,8 +1001,7 @@
                     showStatus('Nama Posyandu tidak boleh kosong.', true);
                     namaPosyanduInput.classList.add('is-invalid');
                     saveBtn.disabled = false;
-                    btnText.classList.remove('hidden');
-                    spinner.classList.add('hidden');
+                    saveBtn.textContent = isNew ? 'Tambah' : 'Simpan';
                     return;
                 }
                 
@@ -1027,8 +1017,7 @@
                     console.error("Error saving data: ", error);
                     showStatus("Gagal menyimpan data: " + error.message, true);
                     saveBtn.disabled = false;
-                    btnText.classList.remove('hidden');
-                    spinner.classList.add('hidden');
+                    saveBtn.textContent = isNew ? 'Tambah' : 'Simpan';
                 }
             }
         });
