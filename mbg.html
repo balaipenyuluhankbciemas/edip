@@ -24,7 +24,10 @@
     <style>
         /* Custom font and minor style adjustments */
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
-        body { font-family: 'Roboto', sans-serif; }
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            padding-bottom: 50px; /* Add padding to prevent footer overlap */
+        }
         .btn-disabled { cursor: not-allowed; background-color: #9ca3af; }
         .btn-disabled:hover { background-color: #9ca3af; }
         select:disabled, input:disabled { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; }
@@ -180,6 +183,32 @@
             border-radius: 0.375rem;
             border: 1px solid #ced4da;
         }
+        /* Fixed Footer */
+        .app-footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #374151; /* gray-700 */
+            color: white;
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            z-index: 1001; /* Ensure it's above other content */
+        }
+        
+        /* GPS Refresh button animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        .leaflet-control-custom {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -279,7 +308,7 @@
     </div>
 
     <!-- Floating Action Button -->
-    <button id="add-row-btn" class="fixed bottom-8 right-8 bg-[#3b71ca] text-white w-16 h-16 rounded-full flex items-center justify-center text-4xl mdb-btn z-10">
+    <button id="add-row-btn" class="fixed bottom-20 right-8 bg-[#3b71ca] text-white w-16 h-16 rounded-full flex items-center justify-center text-4xl mdb-btn z-10">
         +
     </button>
     
@@ -362,6 +391,10 @@
             <div id="distance-info" class="mt-2 text-center font-semibold"></div>
         </div>
     </div>
+
+    <footer class="app-footer">
+        Developer smysnie 2025
+    </footer>
 
 
     <!-- Firebase SDK -->
@@ -648,6 +681,41 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
+            
+            // Add custom refresh control
+            const RefreshControl = L.Control.extend({
+                onAdd: function(map) {
+                    const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom bg-white p-2 rounded-md shadow-md hover:bg-gray-100');
+                    btn.innerHTML = `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12a8 8 0 11-8-8 8 8 0 018 8z"></path></svg>`;
+                    btn.title = "Refresh GPS";
+
+                    L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
+                              .on(btn, 'click', L.DomEvent.preventDefault)
+                              .on(btn, 'click', () => {
+                                  const icon = btn.querySelector('svg');
+                                  icon.classList.add('spinner');
+                                  btn.disabled = true;
+
+                                  navigator.geolocation.getCurrentPosition(
+                                      (position) => {
+                                          updateUserLocationOnMap(position, posyanduLatLng);
+                                          icon.classList.remove('spinner');
+                                          btn.disabled = false;
+                                          showStatus("Lokasi GPS berhasil diperbarui.");
+                                      },
+                                      (error) => {
+                                          handleLocationError(error);
+                                          icon.classList.remove('spinner');
+                                          btn.disabled = false;
+                                      },
+                                      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                                  );
+                              });
+                    return btn;
+                }
+            });
+            new RefreshControl({ position: 'bottomright' }).addTo(map);
+
 
             posyanduMarker = L.marker(posyanduLatLng).addTo(map).bindPopup(`<b>${posyanduName}</b>`).openPopup();
 
@@ -658,55 +726,59 @@
             }
 
             locationWatcherId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
-                    const distance = userLatLng.distanceTo(posyanduLatLng);
-                    
-                    const circleOptions = {
-                        radius: 20,
-                        fillOpacity: 0.5,
-                        weight: 1,
-                    };
-
-                    if (distance > 6000) {
-                        circleOptions.color = 'red';
-                        circleOptions.fillColor = '#f03';
-                    } else {
-                        circleOptions.color = 'blue';
-                        circleOptions.fillColor = '#30f';
-                    }
-
-                    if (!userMarker) {
-                        userMarker = L.circle(userLatLng, circleOptions).addTo(map).bindPopup('<b>Lokasi Anda</b>');
-                    } else {
-                        userMarker.setLatLng(userLatLng).setStyle(circleOptions);
-                    }
-
-                    if (routeLine) {
-                        map.removeLayer(routeLine);
-                    }
-                    routeLine = L.polyline([posyanduLatLng, userLatLng], {color: 'green'}).addTo(map);
-                    map.fitBounds(L.latLngBounds(posyanduLatLng, userLatLng), { padding: [50, 50] });
-
-                    distanceInfo.textContent = `Jarak ke Posyandu: ${distance.toFixed(0)} meter.`;
-                },
-                (error) => {
-                    let userMessage = 'Gagal mengakses lokasi Anda.';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            userMessage = "Anda perlu memberikan izin lokasi agar fitur ini berfungsi.";
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            userMessage = "Informasi lokasi tidak tersedia saat ini.";
-                            break;
-                        case error.TIMEOUT:
-                            userMessage = "Waktu permintaan lokasi habis. Coba lagi.";
-                            break;
-                    }
-                    showStatus(userMessage, true);
-                    distanceInfo.textContent = userMessage;
-                }
+                (position) => updateUserLocationOnMap(position, posyanduLatLng),
+                handleLocationError
             );
+        }
+        
+        function updateUserLocationOnMap(position, posyanduLatLng) {
+            const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+            const distance = userLatLng.distanceTo(posyanduLatLng);
+            
+            const circleOptions = {
+                radius: 15,
+                fillOpacity: 0.5,
+                weight: 1,
+            };
+
+            if (distance > 6000) {
+                circleOptions.color = 'red';
+                circleOptions.fillColor = '#f03';
+            } else {
+                circleOptions.color = 'blue';
+                circleOptions.fillColor = '#30f';
+            }
+
+            if (!userMarker) {
+                userMarker = L.circle(userLatLng, circleOptions).addTo(map).bindPopup('<b>Lokasi Anda</b>');
+            } else {
+                userMarker.setLatLng(userLatLng).setStyle(circleOptions);
+            }
+
+            if (routeLine) {
+                map.removeLayer(routeLine);
+            }
+            routeLine = L.polyline([posyanduLatLng, userLatLng], {color: 'green'}).addTo(map);
+            map.fitBounds(L.latLngBounds(posyanduLatLng, userLatLng), { padding: [50, 50] });
+
+            distanceInfo.textContent = `Jarak ke Posyandu: ${distance.toFixed(0)} meter.`;
+        }
+
+        function handleLocationError(error) {
+            let userMessage = 'Gagal mengakses lokasi Anda.';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    userMessage = "Anda perlu memberikan izin lokasi agar fitur ini berfungsi.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    userMessage = "Informasi lokasi tidak tersedia saat ini.";
+                    break;
+                case error.TIMEOUT:
+                    userMessage = "Waktu permintaan lokasi habis. Coba lagi.";
+                    break;
+            }
+            showStatus(userMessage, true);
+            distanceInfo.textContent = userMessage;
         }
 
         function closeMapModal() {
@@ -862,7 +934,6 @@
                 closeMapModal();
             }
         });
-
 
         wargaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
