@@ -208,6 +208,45 @@
         .leaflet-control-custom {
             cursor: pointer;
         }
+
+        /* Google Maps-style User Location Marker */
+        @keyframes pulse-animation {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+            }
+        }
+        .user-location-marker .pulse {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #4a8af4;
+            animation: pulse-animation 2s infinite;
+            z-index: 1;
+        }
+        .user-location-marker .dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #4a8af4;
+            border: 2px solid white;
+            top: 4px;
+            left: 4px;
+            z-index: 2;
+        }
+        /* Style for when user is too far */
+        .user-location-marker.too-far .pulse {
+            background-color: rgba(220, 53, 69, 0.7); /* Red transparent */
+        }
+        .user-location-marker.too-far .dot {
+            background-color: #dc3545; /* Solid red */
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -914,27 +953,20 @@
             const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
             const distance = userLatLng.distanceTo(posyanduLatLng);
             
-            const circleOptions = {
-                radius: 15,
-                weight: 1,
-            };
+            const isTooFar = distance > 6000;
+            const markerClass = `user-location-marker ${isTooFar ? 'too-far' : ''}`;
 
-            if (distance > 6000) {
-                // Set to transparent red if distance > 6km
-                circleOptions.color = 'red';
-                circleOptions.fillColor = '#f03';
-                circleOptions.fillOpacity = 0.3; 
-            } else {
-                // Set to blue if distance <= 6km
-                circleOptions.color = 'blue';
-                circleOptions.fillColor = '#30f';
-                circleOptions.fillOpacity = 0.5;
-            }
+            const userIcon = L.divIcon({
+                className: 'leaflet-div-icon', // Necessary for Leaflet to handle it
+                html: `<div class="${markerClass}"><div class="pulse"></div><div class="dot"></div></div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
 
             if (!userMarker) {
-                userMarker = L.circle(userLatLng, circleOptions).addTo(map).bindPopup('<b>Lokasi Anda</b>');
+                userMarker = L.marker(userLatLng, { icon: userIcon }).addTo(map).bindPopup('<b>Lokasi Anda</b>');
             } else {
-                userMarker.setLatLng(userLatLng).setStyle(circleOptions);
+                userMarker.setLatLng(userLatLng).setIcon(userIcon);
             }
 
             if (routeLine) {
@@ -945,6 +977,7 @@
 
             distanceInfo.textContent = `Jarak ke Posyandu: ${distance.toFixed(0)} meter.`;
         }
+
 
         function handleLocationError(error) {
             let userMessage = 'Gagal mengakses lokasi Anda.';
