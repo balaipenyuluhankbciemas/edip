@@ -204,7 +204,6 @@
         }
         .spinner {
             display: inline-block;
-            animation: spin 1s linear infinite;
         }
         .leaflet-control-custom {
             cursor: pointer;
@@ -285,15 +284,12 @@
                             <th rowspan="2" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Alamat Posyandu</th>
                             <th rowspan="2" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Titik Koordinat</th>
                             <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Bumil</th>
-                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Busui</th>
-                            <th colspan="3" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Balita</th>
+                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Busui 0-5 Bulan</th>
+                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">BALITA 6-59 Bulan</th>
                             <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Jumlah Kader</th>
                             <th colspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Petugas Penanggung Jawab</th>
                         </tr>
                         <tr>
-                            <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">0-12 Bln</th>
-                            <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">13-59 Bln</th>
-                            <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah 0-59</th>
                             <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                             <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Nomor Hand Phone</th>
                         </tr>
@@ -329,9 +325,10 @@
                         <div class="md:col-span-2">
                              <label for="status-warga" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                              <select id="status-warga" class="form-control" required>
+                                 <option value="" disabled selected>--PILIH DATA--</option>
                                  <option value="BUMIL">BUMIL</option>
-                                 <option value="BUSUI">BUSUI</option>
-                                 <option value="BALITA">BALITA</option>
+                                 <option value="BUSUI 0-5 Bulan">BUSUI 0-5 Bulan</option>
+                                 <option value="BALITA 6-59 Bulan">BALITA 6-59 Bulan</option>
                              </select>
                         </div>
                         <div>
@@ -353,7 +350,15 @@
                     </div>
                     <div class="flex justify-end mt-4">
                         <button type="button" id="cancel-warga-edit-btn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg mr-2 hidden">Batal Edit</button>
-                        <button type="submit" id="save-warga-btn" class="bg-[#3b71ca] text-white font-semibold py-2 px-4 rounded-lg">Simpan</button>
+                        <button type="submit" id="save-warga-btn" class="bg-[#3b71ca] text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center justify-center min-w-[100px]">
+                            <span class="btn-text">Simpan</span>
+                            <span class="spinner hidden">
+                                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
                     </div>
                 </form>
 
@@ -368,6 +373,7 @@
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama Ibu</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama Anak</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tgl Lahir</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Usia</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             </tr>
                         </thead>
@@ -376,6 +382,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="warga-pagination-controls" class="flex justify-between items-center mt-4"></div>
             </div>
         </div>
     </div>
@@ -401,7 +408,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration ---
         const firebaseConfig = {
@@ -418,8 +425,6 @@
         const bulanList = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         const dataKeys = [
             'nama_posyandu', 'alamat_posyandu', 'titik_koordinat', 
-            'bumil', 'busui', 
-            'balita_0_12', 'balita_13_59', 
             'jumlah_kader', 
             'petugas_nama', 'petugas_hp'
         ];
@@ -448,7 +453,9 @@
         const wargaDocIdInput = document.getElementById('warga-doc-id');
         const wargaTableBody = document.getElementById('warga-table-body');
         const statusWargaSelect = document.getElementById('status-warga');
+        const namaAnakInput = document.getElementById('nama-anak');
         const tglLahirAnakInput = document.getElementById('tgl-lahir-anak');
+        const wargaPaginationControls = document.getElementById('warga-pagination-controls');
 
         // Map Modal Elements
         const mapModal = document.getElementById('map-modal');
@@ -460,8 +467,12 @@
         let db, auth, collectionRef;
         let unsubscribe = () => {};
         let unsubscribeWarga = () => {};
+        let wargaListeners = {};
         let tomSelectDesa, tomSelectBulan;
         let map, userMarker, posyanduMarker, routeLine, locationWatcherId;
+        let allWargaDocs = [];
+        let currentWargaPage = 1;
+        const wargaRowsPerPage = 5;
 
         // --- Helper Functions ---
         const showStatus = (message, isError = false) => {
@@ -473,15 +484,9 @@
                 progressBarColor: isError ? 'rgb(220, 53, 69)' : 'rgb(25, 135, 84)',
             });
         };
-
-        const calculateTotalsInRow = (row) => {
-            const totalBalita = (Number(row.querySelector('[data-key="balita_0_12"]').value) || 0) + (Number(row.querySelector('[data-key="balita_13_59"]').value) || 0);
-            row.querySelector('.total-balita-cell').textContent = totalBalita;
-        };
-
+        
         const generateRowHTML = (docData, docId) => {
             const data = { ...Object.fromEntries(dataKeys.map(k => [k, ''])), ...docData };
-            const jumlah_0_59 = (Number(data.balita_0_12) || 0) + (Number(data.balita_13_59) || 0);
             const coord = data.titik_koordinat || '';
             const coordCellHtml = coord ? `<td class="px-2 py-2 text-sm text-blue-600 hover:underline cursor-pointer coord-cell" data-coord="${coord}" data-name="${data.nama_posyandu}">${coord}</td>` : `<td class="px-2 py-2 text-sm">${coord}</td>`;
 
@@ -494,11 +499,9 @@
                 <td class="px-2 py-2 text-sm text-blue-600 hover:underline cursor-pointer nama-posyandu-cell" data-id="${docId}" data-name="${data.nama_posyandu}">${data.nama_posyandu || ''}</td>
                 <td class="px-2 py-2 text-sm">${data.alamat_posyandu || ''}</td>
                 ${coordCellHtml}
-                <td class="px-2 py-2 text-sm text-center">${data.bumil || 0}</td>
-                <td class="px-2 py-2 text-sm text-center">${data.busui || 0}</td>
-                <td class="px-2 py-2 text-sm text-center">${data.balita_0_12 || 0}</td>
-                <td class="px-2 py-2 text-sm text-center">${data.balita_13_59 || 0}</td>
-                <td class="px-2 py-2 text-sm text-center calculated-cell">${jumlah_0_59}</td>
+                <td class="px-2 py-2 text-sm text-center bumil-cell">0</td>
+                <td class="px-2 py-2 text-sm text-center busui-cell">0</td>
+                <td class="px-2 py-2 text-sm text-center balita-cell">0</td>
                 <td class="px-2 py-2 text-sm text-center">${data.jumlah_kader || 0}</td>
                 <td class="px-2 py-2 text-sm">${data.petugas_nama || ''}</td>
                 <td class="px-2 py-2 text-sm">${data.petugas_hp || ''}</td>
@@ -507,22 +510,24 @@
 
         const generateEditRowHTML = (docData = {}, isNew = false) => {
             const data = { ...Object.fromEntries(dataKeys.map(k => [k, ''])), kelurahan: '', ...docData };
-            const jumlah_0_59 = (Number(data.balita_0_12) || 0) + (Number(data.balita_13_59) || 0);
             
             return `
                 <td class="px-2 py-1 text-center">
-                    <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2">${isNew ? 'Tambah' : 'Simpan'}</button>
+                    <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2 inline-flex items-center justify-center">
+                        <span class="btn-text">${isNew ? 'Tambah' : 'Simpan'}</span>
+                        <span class="spinner hidden ml-1">
+                            <svg class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </span>
+                    </button>
                     <button class="cancel-btn text-btn text-gray-600 hover:text-gray-900">Batal</button>
                 </td>
                 <td class="px-2 py-1"><select class="edit-input w-full kelurahan-edit-input" ${isNew ? '' : 'disabled'}>${kelurahanList.map(k => `<option value="${k}" ${k === data.kelurahan ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
                 <td class="px-2 py-1"><input type="text" class="edit-input" data-key="nama_posyandu" value="${data.nama_posyandu || ''}" placeholder="Nama Posyandu"></td>
                 <td class="px-2 py-1"><input type="text" class="edit-input" data-key="alamat_posyandu" value="${data.alamat_posyandu || ''}" placeholder="Alamat"></td>
                 <td class="px-2 py-1"><input type="text" class="edit-input" data-key="titik_koordinat" value="${data.titik_koordinat || ''}" placeholder="Lat, Lng"></td>
-                <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center" data-key="bumil" value="${data.bumil || 0}"></td>
-                <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center" data-key="busui" value="${data.busui || 0}"></td>
-                <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center balita-input" data-key="balita_0_12" value="${data.balita_0_12 || 0}"></td>
-                <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center balita-input" data-key="balita_13_59" value="${data.balita_13_59 || 0}"></td>
-                <td class="px-2 py-1 text-sm text-center calculated-cell total-balita-cell">${jumlah_0_59}</td>
+                <td class="px-2 py-1 text-sm text-center bumil-cell">0</td>
+                <td class="px-2 py-1 text-sm text-center busui-cell">0</td>
+                <td class="px-2 py-1 text-sm text-center balita-cell">0</td>
                 <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center" data-key="jumlah_kader" value="${data.jumlah_kader || 0}"></td>
                 <td class="px-2 py-1"><input type="text" class="edit-input" data-key="petugas_nama" value="${data.petugas_nama || ''}" placeholder="Nama Petugas"></td>
                 <td class="px-2 py-1"><input type="text" class="edit-input" data-key="petugas_hp" value="${data.petugas_hp || ''}" placeholder="No. HP"></td>
@@ -532,15 +537,15 @@
         function getVisibleTableData() {
             const headers = [
                 "Desa/Kelurahan", "Nama Posyandu", "Alamat Posyandu", "Titik Koordinat",
-                "Bumil", "Busui", "Balita 0-12 Bln", "Balita 13-59 Bln", "Jumlah 0-59",
+                "Bumil", "Busui 0-5 Bulan", "BALITA 6-59 Bulan",
                 "Jumlah Kader", "Nama Petugas", "Nomor Hand Phone"
             ];
 
             const rows = [];
             previewBody.querySelectorAll('tr').forEach(row => {
-                if (row.dataset.originalData && row.children.length > 1) {
+                if (row.dataset.id && row.children.length > 1) {
                     const cells = Array.from(row.querySelectorAll('td'));
-                    rows.push(cells.slice(1, 13).map(cell => cell.textContent));
+                    rows.push(cells.slice(1, 11).map(cell => cell.textContent));
                 }
             });
 
@@ -548,9 +553,52 @@
         }
 
         // --- Firestore Core Logic ---
+        function listenForWargaUpdates(posyanduId) {
+            if (wargaListeners[posyanduId]) {
+                wargaListeners[posyanduId]();
+            }
+
+            const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
+            wargaListeners[posyanduId] = onSnapshot(wargaCollectionRef, (wargaSnapshot) => {
+                let bumilCount = 0;
+                let busuiCount = 0;
+                let balitaCount = 0;
+
+                wargaSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.status === 'BUMIL') {
+                        bumilCount++;
+                    } else if (data.status === 'BUSUI 0-5 Bulan') {
+                        busuiCount++;
+                    } else if (data.status === 'BALITA 6-59 Bulan' && data.tgl_lahir_anak) {
+                        const birthDate = new Date(data.tgl_lahir_anak);
+                        const ageInMonths = (new Date().getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30.4375);
+                        if (ageInMonths >= 6 && ageInMonths < 60) {
+                            balitaCount++;
+                        }
+                    }
+                });
+
+                const row = previewBody.querySelector(`tr[data-id="${posyanduId}"]`);
+                if (row) {
+                    row.querySelector('.bumil-cell').textContent = bumilCount;
+                    row.querySelector('.busui-cell').textContent = busuiCount;
+                    row.querySelector('.balita-cell').textContent = balitaCount;
+                }
+            });
+        }
+
+        function unsubscribeAllWargaListeners() {
+            for (const id in wargaListeners) {
+                wargaListeners[id]();
+            }
+            wargaListeners = {};
+        }
+
         function fetchAndRenderData() {
             if (!collectionRef) return;
             unsubscribe(); 
+            unsubscribeAllWargaListeners();
 
             loadingIndicator.style.display = 'block';
             previewBody.innerHTML = '';
@@ -575,7 +623,7 @@
                 });
 
                 if (docs.length === 0) {
-                    previewBody.innerHTML = `<tr><td colspan="13" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
+                    previewBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
                 } else {
                     const rowsHtml = docs.map(doc => {
                         const data = doc.data();
@@ -583,6 +631,7 @@
                         row.dataset.id = doc.id;
                         row.dataset.originalData = JSON.stringify(data);
                         row.innerHTML = generateRowHTML(data, doc.id);
+                        listenForWargaUpdates(doc.id); // Listen for updates for each row
                         return row.outerHTML;
                     }).join('');
                     previewBody.innerHTML = rowsHtml;
@@ -600,11 +649,97 @@
         // --- Modal Logic ---
         function handleStatusChange() {
             const status = statusWargaSelect.value;
-            if (status === 'BUMIL' || status === 'BUSUI') {
+            if (status === 'BUMIL') {
+                namaAnakInput.disabled = true;
+                namaAnakInput.value = '';
                 tglLahirAnakInput.disabled = true;
-                tglLahirAnakInput.value = ''; // Clear the value when disabled
+                tglLahirAnakInput.value = '';
             } else {
+                namaAnakInput.disabled = false;
                 tglLahirAnakInput.disabled = false;
+            }
+        }
+
+        function calculateAge(birthDateString) {
+            if (!birthDateString) return { years: 0, months: 0, totalMonths: 0, formatted: '-' };
+            const birthDate = new Date(birthDateString);
+            const today = new Date();
+            let years = today.getFullYear() - birthDate.getFullYear();
+            let months = today.getMonth() - birthDate.getMonth();
+            if (months < 0 || (months === 0 && today.getDate() < birthDate.getDate())) {
+                years--;
+                months += 12;
+            }
+            const totalMonths = years * 12 + months;
+            return { years, months, totalMonths, formatted: `${years} Thn, ${months} Bln` };
+        }
+
+        function displayWargaPage() {
+            wargaTableBody.innerHTML = '';
+            if (allWargaDocs.length === 0) {
+                 wargaTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">Belum ada data MBG.</td></tr>`;
+                 setupPaginationControls();
+                 return;
+            }
+
+            const startIndex = (currentWargaPage - 1) * wargaRowsPerPage;
+            const endIndex = startIndex + wargaRowsPerPage;
+            const pageDocs = allWargaDocs.slice(startIndex, endIndex);
+
+            const wargaRowsHtml = pageDocs.map(doc => {
+                const data = doc.data();
+                const age = calculateAge(data.tgl_lahir_anak);
+                const rowClass = age.totalMonths > 59 ? 'bg-red-100' : '';
+                
+                return `
+                    <tr class="${rowClass}" data-id="${doc.id}" data-original-data='${JSON.stringify(data)}'>
+                        <td class="px-2 py-2 text-sm whitespace-nowrap">
+                            <button class="edit-warga-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${doc.id}">Edit</button>
+                            <button class="delete-warga-btn text-btn text-red-600 hover:text-red-900" data-id="${doc.id}">Hapus</button>
+                        </td>
+                        <td class="px-2 py-2 text-sm">${data.nama_kk || ''}</td>
+                        <td class="px-2 py-2 text-sm">${data.nama_ibu || ''}</td>
+                        <td class="px-2 py-2 text-sm">${data.nama_anak || ''}</td>
+                        <td class="px-2 py-2 text-sm">${data.tgl_lahir_anak || ''}</td>
+                        <td class="px-2 py-2 text-sm">${age.formatted}</td>
+                        <td class="px-2 py-2 text-sm">${data.status || ''}</td>
+                    </tr>
+                `;
+            }).join('');
+            wargaTableBody.innerHTML = wargaRowsHtml;
+            setupPaginationControls();
+        }
+
+        function setupPaginationControls() {
+            wargaPaginationControls.innerHTML = '';
+            const pageCount = Math.ceil(allWargaDocs.length / wargaRowsPerPage);
+            if (pageCount <= 1) return;
+
+            let html = `<div class="flex-1 text-sm text-gray-700">Halaman ${currentWargaPage} dari ${pageCount}</div>`;
+            html += '<div>';
+            if (currentWargaPage > 1) {
+                html += `<button id="prev-warga-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Sebelumnya</button>`;
+            }
+            if (currentWargaPage < pageCount) {
+                html += `<button id="next-warga-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Berikutnya</button>`;
+            }
+            html += '</div>';
+            wargaPaginationControls.innerHTML = html;
+
+            const prevBtn = document.getElementById('prev-warga-page');
+            const nextBtn = document.getElementById('next-warga-page');
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    currentWargaPage--;
+                    displayWargaPage();
+                });
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    currentWargaPage++;
+                    displayWargaPage();
+                });
             }
         }
 
@@ -618,30 +753,9 @@
             const q = query(wargaCollectionRef, orderBy("createdAt", "desc"));
 
             unsubscribeWarga = onSnapshot(q, (snapshot) => {
-                if (snapshot.empty) {
-                    wargaTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Belum ada data MBG.</td></tr>`;
-                    return;
-                }
-                const wargaRowsHtml = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    const row = document.createElement('tr');
-                    row.dataset.id = doc.id;
-                    row.dataset.originalData = JSON.stringify(data);
-                    
-                    row.innerHTML = `
-                        <td class="px-2 py-2 text-sm whitespace-nowrap">
-                            <button class="edit-warga-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${doc.id}">Edit</button>
-                            <button class="delete-warga-btn text-btn text-red-600 hover:text-red-900" data-id="${doc.id}">Hapus</button>
-                        </td>
-                        <td class="px-2 py-2 text-sm">${data.nama_kk || ''}</td>
-                        <td class="px-2 py-2 text-sm">${data.nama_ibu || ''}</td>
-                        <td class="px-2 py-2 text-sm">${data.nama_anak || ''}</td>
-                        <td class="px-2 py-2 text-sm">${data.tgl_lahir_anak || ''}</td>
-                        <td class="px-2 py-2 text-sm">${data.status || ''}</td>
-                    `;
-                    return row.outerHTML;
-                }).join('');
-                wargaTableBody.innerHTML = wargaRowsHtml;
+                allWargaDocs = snapshot.docs;
+                currentWargaPage = 1;
+                displayWargaPage();
             });
         }
 
@@ -655,7 +769,7 @@
         function resetWargaForm() {
             wargaForm.reset();
             wargaDocIdInput.value = '';
-            saveWargaBtn.textContent = 'Simpan';
+            saveWargaBtn.querySelector('.btn-text').textContent = 'Simpan';
             cancelWargaEditBtn.classList.add('hidden');
             // Remove validation classes
             Array.from(wargaForm.elements).forEach(el => el.classList.remove('is-invalid'));
@@ -847,6 +961,14 @@
             }
 
             if (target.classList.contains('save-btn')) {
+                const saveBtn = target;
+                const btnText = saveBtn.querySelector('.btn-text');
+                const spinner = saveBtn.querySelector('.spinner');
+                
+                saveBtn.disabled = true;
+                btnText.classList.add('hidden');
+                spinner.classList.remove('hidden');
+
                 const isNew = row.dataset.isNew === 'true';
                 const originalData = isNew ? {} : JSON.parse(row.dataset.originalData);
 
@@ -868,10 +990,11 @@
                 if (!dataPayload.nama_posyandu) {
                     showStatus('Nama Posyandu tidak boleh kosong.', true);
                     namaPosyanduInput.classList.add('is-invalid');
+                    saveBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
                     return;
                 }
-                
-                iziToast.info({ title: 'Menyimpan', message: 'Sedang menyimpan data...', position: 'bottomCenter', timeout: false, id: 'saving' });
                 
                 try {
                     if (isNew) {
@@ -879,12 +1002,13 @@
                     } else {
                         await updateDoc(doc(db, collectionRef.path, docId), dataPayload);
                     }
-                    iziToast.destroy();
                     showStatus(isNew ? "Data baru berhasil ditambahkan." : "Data berhasil diperbarui.", false);
-                } catch(error) {
-                    iziToast.destroy();
+                } catch (error) {
                     console.error("Error saving data: ", error);
                     showStatus("Gagal menyimpan data: " + error.message, true);
+                    saveBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
                 }
             }
         });
@@ -901,9 +1025,6 @@
         });
         
         previewBody.addEventListener('input', e => {
-            if (e.target.matches('.balita-input')) {
-                calculateTotalsInRow(e.target.closest('tr'));
-            }
             if(e.target.matches('.is-invalid')) {
                 e.target.classList.remove('is-invalid');
             }
@@ -941,6 +1062,9 @@
             const wargaId = wargaDocIdInput.value;
             let isValid = true;
 
+            const btnText = saveWargaBtn.querySelector('.btn-text');
+            const spinner = saveWargaBtn.querySelector('.spinner');
+
             if (!posyanduId) {
                 showStatus('ID Posyandu tidak ditemukan.', true);
                 return;
@@ -949,7 +1073,8 @@
             // Validate form
             const requiredFields = [
                 document.getElementById('nama-kk'), 
-                document.getElementById('nama-ibu')
+                document.getElementById('nama-ibu'),
+                document.getElementById('status-warga')
             ];
             requiredFields.forEach(field => {
                 field.classList.remove('is-invalid');
@@ -963,6 +1088,10 @@
                 showStatus('Harap isi semua kolom yang wajib diisi.', true);
                 return;
             }
+
+            saveWargaBtn.disabled = true;
+            btnText.classList.add('hidden');
+            spinner.classList.remove('hidden');
 
             const wargaData = {
                 nama_kk: document.getElementById('nama-kk').value,
@@ -988,6 +1117,10 @@
             } catch (error) {
                 console.error("Error saving MBG data: ", error);
                 showStatus('Gagal menyimpan data MBG: ' + error.message, true);
+            } finally {
+                saveWargaBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                spinner.classList.add('hidden');
             }
         });
 
@@ -1000,13 +1133,13 @@
             const originalData = JSON.parse(row.dataset.originalData);
 
             if (target.classList.contains('edit-warga-btn')) {
-                document.getElementById('status-warga').value = originalData.status || 'BUMIL';
+                document.getElementById('status-warga').value = originalData.status || '';
                 document.getElementById('nama-kk').value = originalData.nama_kk || '';
                 document.getElementById('nama-ibu').value = originalData.nama_ibu || '';
                 document.getElementById('nama-anak').value = originalData.nama_anak || '';
                 document.getElementById('tgl-lahir-anak').value = originalData.tgl_lahir_anak || '';
                 wargaDocIdInput.value = wargaId;
-                saveWargaBtn.textContent = 'Update';
+                saveWargaBtn.querySelector('.btn-text').textContent = 'Update';
                 cancelWargaEditBtn.classList.remove('hidden');
                 handleStatusChange(); // Update disabled state on edit
             }
