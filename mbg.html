@@ -425,13 +425,13 @@
 
         // --- Configuration ---
         const firebaseConfig = {
-          apiKey: "AIzaSyDEsBHqtbN6S_Y8q3cPa4Q_ezcVo7vg68s",
-          authDomain: "data-mbg.firebaseapp.com",
-          projectId: "data-mbg",
-          storageBucket: "data-mbg.appspot.com",
-          messagingSenderId: "883332707974",
-          appId: "1:883332707974:web:e8ae210d1280d8fd624307",
-          measurementId: "G-9F31ZMDVN7"
+         apiKey: "AIzaSyDEsBHqtbN6S_Y8q3cPa4Q_ezcVo7vg68s",
+         authDomain: "data-mbg.firebaseapp.com",
+         projectId: "data-mbg",
+         storageBucket: "data-mbg.appspot.com",
+         messagingSenderId: "883332707974",
+         appId: "1:883332707974:web:e8ae210d1280d8fd624307",
+         measurementId: "G-9F31ZMDVN7"
         };
         
         const kelurahanList = ["CIEMAS", "CIBENDA", "CIWARU", "MEKARJAYA", "GIRIMUKTI", "TAMANJAYA", "MANDRAJAYA", "SIDAMULYA", "MEKARSAKTI"];
@@ -916,16 +916,19 @@
             
             const circleOptions = {
                 radius: 15,
-                fillOpacity: 0.5,
                 weight: 1,
             };
 
             if (distance > 6000) {
+                // Set to transparent red if distance > 6km
                 circleOptions.color = 'red';
                 circleOptions.fillColor = '#f03';
+                circleOptions.fillOpacity = 0.3; 
             } else {
+                // Set to blue if distance <= 6km
                 circleOptions.color = 'blue';
                 circleOptions.fillColor = '#30f';
+                circleOptions.fillOpacity = 0.5;
             }
 
             if (!userMarker) {
@@ -1289,7 +1292,7 @@
             let tableHtml = '<table style="border:1px solid #000; border-collapse: collapse; width:100%; font-size: 10pt; font-family: Arial, sans-serif;">';
             tableHtml += '<thead><tr>' + headers.map(h => `<th style="border:1px solid #000; padding: 5px; background-color: #f2f2f2;">${h}</th>`).join('') + '</tr></thead>';
             tableHtml += '<tbody>' + rows.map(row => '<tr>' + row.map(cell => `<td style="border:1px solid #000; padding: 5px;">${cell}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
-            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export</title></head><body>${tableHtml}</body></html>`;
+            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export</title></head><body>${fullHtml}</body></html>`;
             const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
