@@ -312,6 +312,7 @@
                 </table>
                  <div id="loading-indicator" class="w-full text-center py-8 text-gray-500">Memuat data...</div>
             </div>
+            <div id="posyandu-pagination-controls" class="flex justify-between items-center mt-4 px-2"></div>
         </div>
     </div>
 
@@ -454,6 +455,7 @@
         const addRowBtn = document.getElementById('add-row-btn');
         const exportDropdownBtn = document.getElementById('export-dropdown-btn');
         const updateAppBtn = document.getElementById('update-app-btn');
+        const posyanduPaginationControls = document.getElementById('posyandu-pagination-controls');
         
         // Modal elements
         const wargaModal = document.getElementById('warga-modal');
@@ -486,6 +488,9 @@
         let allWargaDocs = [];
         let currentWargaPage = 1;
         const wargaRowsPerPage = 5;
+        let allPosyanduDocs = [];
+        let currentPosyanduPage = 1;
+        const posyanduRowsPerPage = 10;
 
         // --- Helper Functions ---
         const showStatus = (message, isError = false) => {
@@ -607,6 +612,64 @@
             wargaListeners = {};
         }
 
+        function displayPosyanduPage() {
+            previewBody.innerHTML = '';
+            unsubscribeAllWargaListeners();
+
+            if (allPosyanduDocs.length === 0) {
+                previewBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
+                setupPosyanduPaginationControls();
+                return;
+            }
+
+            const startIndex = (currentPosyanduPage - 1) * posyanduRowsPerPage;
+            const endIndex = startIndex + posyanduRowsPerPage;
+            const pageDocs = allPosyanduDocs.slice(startIndex, endIndex);
+
+            pageDocs.forEach(doc => {
+                const data = doc.data();
+                const row = previewBody.insertRow();
+                row.dataset.id = doc.id;
+                row.dataset.originalData = JSON.stringify(data);
+                row.innerHTML = generateRowHTML(data, doc.id);
+                listenForWargaUpdates(doc.id); // Listen for updates for each row
+            });
+            setupPosyanduPaginationControls();
+        }
+
+        function setupPosyanduPaginationControls() {
+            posyanduPaginationControls.innerHTML = '';
+            const pageCount = Math.ceil(allPosyanduDocs.length / posyanduRowsPerPage);
+            if (pageCount <= 1) return;
+
+            let html = `<div class="flex-1 text-sm text-gray-700">Halaman ${currentPosyanduPage} dari ${pageCount}</div>`;
+            html += '<div>';
+            if (currentPosyanduPage > 1) {
+                html += `<button id="prev-posyandu-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Sebelumnya</button>`;
+            }
+            if (currentPosyanduPage < pageCount) {
+                html += `<button id="next-posyandu-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Berikutnya</button>`;
+            }
+            html += '</div>';
+            posyanduPaginationControls.innerHTML = html;
+
+            const prevBtn = document.getElementById('prev-posyandu-page');
+            const nextBtn = document.getElementById('next-posyandu-page');
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    currentPosyanduPage--;
+                    displayPosyanduPage();
+                });
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    currentPosyanduPage++;
+                    displayPosyanduPage();
+                });
+            }
+        }
+
         function fetchAndRenderData() {
             if (!collectionRef) return;
             unsubscribe(); 
@@ -633,23 +696,13 @@
                     if (kelurahanCompare !== 0) return kelurahanCompare;
                     return (dataA.nama_posyandu || "").localeCompare(dataB.nama_posyandu || "");
                 });
+                
+                allPosyanduDocs = docs;
+                currentPosyanduPage = 1;
+                displayPosyanduPage();
 
-                if (docs.length === 0) {
-                    previewBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
-                } else {
-                    const rowsHtml = docs.map(doc => {
-                        const data = doc.data();
-                        const row = document.createElement('tr');
-                        row.dataset.id = doc.id;
-                        row.dataset.originalData = JSON.stringify(data);
-                        row.innerHTML = generateRowHTML(data, doc.id);
-                        listenForWargaUpdates(doc.id); // Listen for updates for each row
-                        return row.outerHTML;
-                    }).join('');
-                    previewBody.innerHTML = rowsHtml;
-                }
-                exportDropdownBtn.disabled = docs.length === 0;
-                exportDropdownBtn.classList.toggle('btn-disabled', docs.length === 0);
+                exportDropdownBtn.disabled = allPosyanduDocs.length === 0;
+                exportDropdownBtn.classList.toggle('btn-disabled', allPosyanduDocs.length === 0);
 
             }, (error) => {
                 console.error("Error fetching data: ", error);
