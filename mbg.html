@@ -170,16 +170,23 @@
             padding: 1.5rem;
             border-radius: 0.5rem;
             width: 95vw;
-            height: 95vh;
+            max-width: 800px; /* Keep a max width for larger screens */
+            height: 90vh;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
         }
+        .modal-header {
+            flex-shrink: 0;
+        }
         .modal-body {
              flex-grow: 1;
-             display: flex;
-             flex-direction: column;
-             overflow: hidden;
+             overflow-y: auto;
+        }
+        #map-modal .modal-content {
+            width: 95vw;
+            height: 95vh;
+            max-width: none; /* Allow map modal to be larger */
         }
         #map {
             flex-grow: 1;
@@ -346,7 +353,7 @@
     <!-- MBG Input Modal -->
     <div id="warga-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <div class="modal-header flex justify-between items-center mb-4 border-b pb-2">
                 <h2 id="warga-modal-title" class="text-xl font-bold">Data MBG</h2>
                 <button id="close-warga-modal-btn" class="text-2xl font-bold">&times;</button>
             </div>
@@ -837,12 +844,19 @@
             wargaModal.style.display = 'flex';
 
             const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
-            const q = query(wargaCollectionRef, orderBy("createdAt", "desc"));
+            const q = query(wargaCollectionRef); // Removed orderBy to prevent index errors
 
             unsubscribeWarga = onSnapshot(q, (snapshot) => {
-                allWargaDocs = snapshot.docs;
+                allWargaDocs = snapshot.docs.sort((a,b) => {
+                    const timeA = a.data().createdAt?.toMillis() || 0;
+                    const timeB = b.data().createdAt?.toMillis() || 0;
+                    return timeB - timeA; // Sort descending
+                });
                 currentWargaPage = 1;
                 displayWargaPage();
+            }, (error) => {
+                 console.error("Error fetching warga data:", error);
+                 showStatus("Gagal memuat data MBG: " + error.message, true);
             });
         }
 
