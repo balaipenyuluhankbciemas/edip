@@ -1358,12 +1358,12 @@
         
         // --- Export & Share Listeners ---
         updateAppBtn.addEventListener('click', async () => {
-            const btnText = updateAppBtn.querySelector('.btn-text');
+            const btnIcon = updateAppBtn.querySelector('.btn-icon');
             const spinner = updateAppBtn.querySelector('.spinner');
 
             updateAppBtn.disabled = true;
-            btnText.classList.add('hidden');
-            spinner.classList.remove('hidden');
+            if (btnIcon) btnIcon.classList.add('hidden');
+            if (spinner) spinner.classList.remove('hidden');
 
             showStatus('Membersihkan cache dan memuat ulang aplikasi...');
 
