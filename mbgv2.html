@@ -248,19 +248,25 @@
                 <h1 class="text-2xl font-bold text-gray-800">EDIP-Data MBG</h1>
                 <div class="flex items-center space-x-2 mt-3 sm:mt-0">
                     <!-- Update App Button -->
-                    <button id="update-app-btn" class="w-full sm:w-auto bg-green-600 text-white font-semibold py-2.5 px-6 rounded-lg mdb-btn inline-flex items-center justify-center">
-                         <span class="btn-text">Update App</span>
-                         <span class="spinner hidden ml-2">
+                    <button id="update-app-btn" title="Update App" class="w-11 h-11 bg-green-600 text-white rounded-lg mdb-btn flex items-center justify-center">
+                        <span class="btn-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5m-5 0a9 9 0 111.586 5.828M20 20v-5h-5m5 0a9 9 0 00-1.586-5.828" />
+                            </svg>
+                        </span>
+                        <span class="spinner hidden">
                             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                         </span>
+                        </span>
                     </button>
                     <!-- Dropdown Button for Export/Share -->
                     <div class="relative dropdown">
-                        <button id="export-dropdown-btn" class="w-full sm:w-auto bg-[#3b71ca] text-white font-semibold py-2.5 px-6 rounded-lg mdb-btn btn-disabled" disabled>
-                            Ekspor &#9662;
+                         <button id="export-dropdown-btn" title="Ekspor / Bagikan" class="w-11 h-11 bg-[#3b71ca] text-white rounded-lg mdb-btn flex items-center justify-center btn-disabled" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M5 12a1 1 0 110-2 1 1 0 010 2zm7 0a1 1 0 110-2 1 1 0 010 2zm7 0a1 1 0 110-2 1 1 0 010 2z" />
+                            </svg>
                         </button>
                         <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20">
                             <a href="#" id="export-excel-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke Excel</a>
@@ -407,7 +413,15 @@
                 <div class="flex justify-between items-center mb-2 mt-6">
                     <h3 class="text-lg font-semibold">Daftar MBG Terdaftar</h3>
                     <div class="flex items-center space-x-2">
-                        <button id="import-excel-btn" class="bg-teal-500 text-white font-semibold py-1 px-3 rounded-lg text-sm mdb-btn">Impor Excel</button>
+                        <button id="import-excel-btn" title="Impor dari Excel" class="bg-teal-500 hover:bg-teal-600 text-white p-2 rounded-lg mdb-btn">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                        </button>
+                        <button id="export-mbg-pdf-btn" title="Ekspor ke PDF" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg mdb-btn">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                        </button>
+                        <button id="save-mbg-excel-btn" title="Simpan ke Excel" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg mdb-btn">
+                           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                        </button>
                         <a href="#" id="download-template-btn" class="text-sm text-blue-600 hover:underline">Download Contoh</a>
                     </div>
                 </div>
@@ -419,6 +433,7 @@
                         <thead class="bg-gray-100">
                             <tr>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                                <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama Posyandu</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama KK</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama Ibu</th>
                                 <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama Anak</th>
@@ -458,7 +473,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration ---
         const firebaseConfig = {
@@ -519,6 +534,8 @@
         const importExcelBtn = document.getElementById('import-excel-btn');
         const excelFileInput = document.getElementById('excel-file-input');
         const downloadTemplateBtn = document.getElementById('download-template-btn');
+        const exportMbgPdfBtn = document.getElementById('export-mbg-pdf-btn');
+        const saveMbgExcelBtn = document.getElementById('save-mbg-excel-btn');
 
 
         let db, auth, collectionRef;
@@ -605,6 +622,28 @@
 
             return { headers, rows };
         }
+
+        function getWargaTableData() {
+            const posyanduName = wargaModal.dataset.posyanduName || 'Data';
+            const headers = [
+                "Nama Posyandu", "Nama KK", "Nama Ibu", "Nama Anak", "Tgl Lahir", "Usia", "Status"
+            ];
+            const rows = allWargaDocs.map(doc => {
+                const data = doc.data();
+                const age = calculateAge(data.tgl_lahir_anak);
+                return [
+                    posyanduName,
+                    data.nama_kk || '',
+                    data.nama_ibu || '',
+                    data.nama_anak || '',
+                    data.tgl_lahir_anak || '',
+                    age.formatted,
+                    data.status || ''
+                ];
+            });
+            return { headers, rows, posyanduName };
+        }
+
 
         // --- Firestore Core Logic ---
         async function updatePosyanduCounts(posyanduId) {
@@ -768,9 +807,10 @@
         }
 
         function displayWargaPage() {
+            const posyanduName = wargaModal.dataset.posyanduName || '';
             wargaTableBody.innerHTML = '';
             if (allWargaDocs.length === 0) {
-                 wargaTableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">Belum ada data MBG.</td></tr>`;
+                 wargaTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Belum ada data MBG.</td></tr>`;
                  setupPaginationControls();
                  return;
             }
@@ -790,6 +830,7 @@
                             <button class="edit-warga-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${doc.id}">Edit</button>
                             <button class="delete-warga-btn text-btn text-red-600 hover:text-red-900" data-id="${doc.id}">Hapus</button>
                         </td>
+                        <td class="px-2 py-2 text-sm">${posyanduName}</td>
                         <td class="px-2 py-2 text-sm">${data.nama_kk || ''}</td>
                         <td class="px-2 py-2 text-sm">${data.nama_ibu || ''}</td>
                         <td class="px-2 py-2 text-sm">${data.nama_anak || ''}</td>
@@ -840,6 +881,7 @@
             resetWargaForm();
             posyanduDocIdInput.value = posyanduId;
             wargaModalTitle.textContent = `Data MBG - ${posyanduName}`;
+            wargaModal.dataset.posyanduName = posyanduName; // Store for use in displayWargaPage
             wargaModal.style.display = 'flex';
 
             const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
@@ -1465,6 +1507,37 @@
             reader.readAsArrayBuffer(file);
         });
 
+
+        exportMbgPdfBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const { headers, rows, posyanduName } = getWargaTableData();
+            if (rows.length === 0) { 
+                showStatus('Tidak ada data MBG untuk diekspor!', true); 
+                return; 
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+            doc.autoTable({ 
+                head: [headers], 
+                body: rows, 
+                styles: { fontSize: 8, cellPadding: 2 } 
+            });
+            doc.save(`Laporan_MBG_${posyanduName.replace(/\s/g, '_')}.pdf`);
+        });
+
+        saveMbgExcelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const { headers, rows, posyanduName } = getWargaTableData();
+            if (rows.length === 0) { 
+                showStatus('Tidak ada data MBG untuk disimpan!', true); 
+                return; 
+            }
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            ws['!cols'] = Array(headers.length).fill({ wch: 20 });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data MBG");
+            XLSX.writeFile(wb, `Data_MBG_${posyanduName.replace(/\s/g, '_')}.xlsx`);
+        });
 
         document.getElementById('export-excel-btn').addEventListener('click', (e) => {
             e.preventDefault();
