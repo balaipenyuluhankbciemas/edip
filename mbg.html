@@ -165,7 +165,10 @@
             z-index: 1000;
             padding: 1rem;
         }
-        .modal-content {
+        #warga-modal .modal-content {
+             height: 95vh;
+        }
+        #map-modal .modal-content {
             background-color: white;
             padding: 1.5rem;
             border-radius: 0.5rem;
@@ -177,9 +180,7 @@
         }
         .modal-body {
              flex-grow: 1;
-             display: flex;
-             flex-direction: column;
-             overflow: hidden;
+             overflow-y: auto;
         }
         #map {
             flex-grow: 1;
@@ -253,7 +254,7 @@
                     <!-- Dropdown Button for Export/Share -->
                     <div class="relative dropdown">
                         <button id="export-dropdown-btn" class="w-full sm:w-auto bg-[#3b71ca] text-white font-semibold py-2.5 px-6 rounded-lg mdb-btn btn-disabled" disabled>
-                            Ekspor &#9662;
+                            Ekspor / Bagikan &#9662;
                         </button>
                         <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20">
                             <a href="#" id="export-excel-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ekspor ke Excel</a>
@@ -362,8 +363,8 @@
                              <select id="status-warga" class="form-control" required>
                                  <option value="" disabled selected>--PILIH DATA--</option>
                                  <option value="BUMIL">BUMIL</option>
-                                 <option value="BUSUI 0-5 Bulan">BUSUI</option>
-                                 <option value="BALITA 6-59 Bulan">BALITA</option>
+                                 <option value="BUSUI 0-5 Bulan">BUSUI 0-5 Bulan</option>
+                                 <option value="BALITA 6-59 Bulan">BALITA 6-59 Bulan</option>
                              </select>
                         </div>
                         <div>
