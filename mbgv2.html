@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EDIP-Data MBG</title>
+    <title>EDIP-Data POSYANDU</title>
     <link rel="shortcut icon" href="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png">
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -183,6 +183,10 @@
              flex-grow: 1;
              overflow-y: auto;
         }
+        #map-modal .modal-content, #voice-search-modal .modal-content {
+            height: auto;
+            max-height: 90vh;
+        }
         #map-modal .modal-content {
             width: 95vw;
             height: 95vh;
@@ -212,8 +216,8 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        .spinner {
-            display: inline-block;
+        .spinner-icon.spinning {
+            animation: spin 1s linear infinite;
         }
         .leaflet-control-custom {
             cursor: pointer;
@@ -237,6 +241,16 @@
         .pulse-red-circle {
             animation: pulse-red-circle-animation 1.5s infinite ease-in-out;
         }
+        
+        /* Voice search listening animation */
+        .listening {
+            animation: pulse-blue 1.5s infinite;
+        }
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -245,7 +259,7 @@
         <div class="max-w-screen-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
             <!-- Header Section -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-4 border-b">
-                <h1 class="text-2xl font-bold text-gray-800">EDIP-Data MBG</h1>
+                <h1 class="text-2xl font-bold text-gray-800">EDIP-Data POSYANDU</h1>
                 <div class="flex items-center space-x-2 mt-3 sm:mt-0">
                     <!-- Update App Button -->
                     <button id="update-app-btn" title="Update App" class="w-11 h-11 bg-green-600 text-white rounded-lg mdb-btn flex items-center justify-center">
@@ -299,7 +313,7 @@
                     </div>
                 </div>
                  <!-- Dynamic Filters -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div>
                         <label for="filter-kelurahan" class="block text-sm font-medium text-gray-700 mb-1">Filter Desa/Kelurahan</label>
                         <select id="filter-kelurahan" placeholder="Cari Desa..."></select>
@@ -317,6 +331,13 @@
                             Reset Filter
                         </button>
                     </div>
+                    <div class="self-end">
+                        <button id="voice-search-btn" title="Pencarian Suara" class="w-full bg-blue-500 text-white font-semibold py-2.5 px-4 rounded-lg mdb-btn flex items-center justify-center">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                           </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -331,8 +352,10 @@
                             <th rowspan="2" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Alamat Posyandu</th>
                             <th rowspan="2" class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Titik Koordinat</th>
                             <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Bumil</th>
-                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Busui 0-5 Bulan</th>
-                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">BALITA 6-59 Bulan</th>
+                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">BUSUI 0-5 BULAN</th>
+                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">BALITA 6-59 BULAN</th>
+                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">BUSUI 0-12 BULAN</th>
+                            <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">BALITA 13-59 BULAN</th>
                             <th rowspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider align-middle">Jumlah Kader</th>
                             <th colspan="2" class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Petugas Penanggung Jawab</th>
                         </tr>
@@ -344,6 +367,9 @@
                     <tbody id="preview-body" class="bg-white divide-y divide-gray-200">
                         <!-- Data rows will be dynamically inserted here -->
                     </tbody>
+                    <tfoot id="main-table-footer" class="bg-gray-200 font-bold">
+                        <!-- Total row will be inserted here -->
+                    </tfoot>
                 </table>
                  <div id="loading-indicator" class="w-full text-center py-8 text-gray-500">Memuat data...</div>
             </div>
@@ -356,16 +382,16 @@
         +
     </button>
     
-    <!-- MBG Input Modal -->
+    <!-- Data Posyandu Input Modal -->
     <div id="warga-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header flex justify-between items-center mb-4 border-b pb-2">
-                <h2 id="warga-modal-title" class="text-xl font-bold">Data MBG</h2>
+                <h2 id="warga-modal-title" class="text-xl font-bold">Data Posyandu</h2>
                 <button id="close-warga-modal-btn" class="text-2xl font-bold">&times;</button>
             </div>
             <div class="modal-body">
                 <!-- Form Section -->
-                <h3 class="text-lg font-semibold mb-2">Formulir MBG</h3>
+                <h3 class="text-lg font-semibold mb-2">Formulir Data Posyandu</h3>
                 <form id="warga-form" class="bg-gray-50 p-4 rounded-lg mb-4">
                     <input type="hidden" id="posyandu-doc-id">
                     <input type="hidden" id="warga-doc-id">
@@ -411,15 +437,15 @@
 
                 <!-- Import/Export Section -->
                 <div class="flex justify-between items-center mb-2 mt-6">
-                    <h3 class="text-lg font-semibold">Daftar MBG Terdaftar</h3>
+                    <h3 class="text-lg font-semibold">Daftar Data Posyandu Terdaftar</h3>
                     <div class="flex items-center space-x-2">
                         <button id="import-excel-btn" title="Impor dari Excel" class="bg-teal-500 hover:bg-teal-600 text-white p-2 rounded-lg mdb-btn">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
                         </button>
-                        <button id="export-mbg-pdf-btn" title="Ekspor ke PDF" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg mdb-btn">
+                        <button id="export-posyandu-data-pdf-btn" title="Ekspor ke PDF" class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg mdb-btn">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                         </button>
-                        <button id="save-mbg-excel-btn" title="Simpan ke Excel" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg mdb-btn">
+                        <button id="save-posyandu-data-excel-btn" title="Simpan ke Excel" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg mdb-btn">
                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                         </button>
                         <a href="#" id="download-template-btn" class="text-sm text-blue-600 hover:underline">Download Contoh</a>
@@ -443,7 +469,7 @@
                             </tr>
                         </thead>
                         <tbody id="warga-table-body" class="bg-white divide-y divide-gray-200">
-                            <!-- MBG data will be inserted here -->
+                            <!-- Data Posyandu will be inserted here -->
                         </tbody>
                     </table>
                 </div>
@@ -464,6 +490,90 @@
         </div>
     </div>
 
+    <!-- Voice Search Modal -->
+    <div id="voice-search-modal" class="modal-overlay">
+        <div class="modal-content max-w-lg"> <!-- Made it a bit wider -->
+            <div class="modal-header flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-xl font-bold">Pencarian Suara</h2>
+                <button id="close-voice-search-modal-btn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p id="voice-status" class="text-gray-600 mb-4">Tekan ikon dan katakan nama yang ingin dicari...</p>
+                <button id="start-recognition-btn" class="bg-blue-600 text-white rounded-full w-24 h-24 flex items-center justify-center mx-auto transition-transform duration-200 hover:scale-110">
+                    <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                </button>
+                <p id="voice-result" class="mt-4 font-semibold text-lg h-6"></p>
+                
+                <!-- New container for results -->
+                <div id="voice-search-results-container" class="mt-4 text-left">
+                    <h3 id="voice-results-title" class="font-semibold text-gray-700 mb-2 hidden">Hasil Pencarian:</h3>
+                    <ul id="voice-search-results-list" class="max-h-64 overflow-y-auto divide-y divide-gray-200">
+                        <!-- Results will be populated here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pengukuran Modal -->
+    <div id="pengukuran-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-xl font-bold">Input Pengukuran</h2>
+                <button id="close-pengukuran-modal-btn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="pengukuran-form">
+                    <input type="hidden" id="pengukuran-posyandu-id">
+                    <input type="hidden" id="pengukuran-warga-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg mb-4">
+                        <div>
+                            <label for="pengukuran-nama-kk" class="block text-sm font-medium text-gray-700 mb-1">Nama KK</label>
+                            <input type="text" id="pengukuran-nama-kk" class="form-control" disabled>
+                        </div>
+                        <div>
+                            <label for="pengukuran-nama-ibu" class="block text-sm font-medium text-gray-700 mb-1">Nama Ibu</label>
+                            <input type="text" id="pengukuran-nama-ibu" class="form-control" disabled>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="pengukuran-nama-anak" class="block text-sm font-medium text-gray-700 mb-1">Nama Anak</label>
+                            <input type="text" id="pengukuran-nama-anak" class="form-control" disabled>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2 mt-4">Data Pengukuran Baru</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="pengukuran-bb" class="block text-sm font-medium text-gray-700 mb-1">Berat Badan (kg)</label>
+                            <input type="number" step="0.1" id="pengukuran-bb" class="form-control" placeholder="Contoh: 8.5" required>
+                        </div>
+                        <div>
+                            <label for="pengukuran-tb" class="block text-sm font-medium text-gray-700 mb-1">Tinggi Badan (cm)</label>
+                            <input type="number" step="0.1" id="pengukuran-tb" class="form-control" placeholder="Contoh: 75.5" required>
+                        </div>
+                        <div>
+                            <label for="pengukuran-lila" class="block text-sm font-medium text-gray-700 mb-1">LiLA (cm)</label>
+                            <input type="number" step="0.1" id="pengukuran-lila" class="form-control" placeholder="Contoh: 15.2">
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-6">
+                        <button type="button" id="cancel-pengukuran-btn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg mr-2">Batal</button>
+                        <button type="submit" id="save-pengukuran-btn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center justify-center min-w-[120px]">
+                            <span class="btn-text">Simpan Data</span>
+                            <span class="spinner hidden">
+                                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <footer class="app-footer">
         Developer smysnie 2025
     </footer>
@@ -473,1142 +583,1416 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp, getDocs, collectionGroup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Configuration ---
-        const firebaseConfig = {
-         apiKey: "AIzaSyDEsBHqtbN6S_Y8q3cPa4Q_ezcVo7vg68s",
-         authDomain: "data-mbg.firebaseapp.com",
-         projectId: "data-mbg",
-         storageBucket: "data-mbg.appspot.com",
-         messagingSenderId: "883332707974",
-         appId: "1:883332707974:web:e8ae210d1280d8fd624307",
-         measurementId: "G-9F31ZMDVN7"
-        };
-        
-        const kelurahanList = ["CIEMAS", "CIBENDA", "CIWARU", "MEKARJAYA", "GIRIMUKTI", "TAMANJAYA", "MANDRAJAYA", "SIDAMULYA", "MEKARSAKTI"];
-        const bulanList = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-        const dataKeys = [
-            'nama_posyandu', 'alamat_posyandu', 'titik_koordinat', 
-            'jumlah_kader', 
-            'petugas_nama', 'petugas_hp'
-        ];
-        
-        // --- DOM Elements ---
-        const previewBody = document.getElementById('preview-body');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const filterProvinsiSelect = document.getElementById('filter-provinsi');
-        const filterKabupatenSelect = document.getElementById('filter-kabupaten');
-        const filterKecamatanSelect = document.getElementById('filter-kecamatan');
-        const filterKelurahanSelect = document.getElementById('filter-kelurahan');
-        const filterBulanSelect = document.getElementById('filter-bulan');
-        const filterTahunInput = document.getElementById('filter-tahun');
-        const resetFilterBtn = document.getElementById('reset-filter-btn');
-        const addRowBtn = document.getElementById('add-row-btn');
-        const exportDropdownBtn = document.getElementById('export-dropdown-btn');
-        const updateAppBtn = document.getElementById('update-app-btn');
-        const posyanduPaginationControls = document.getElementById('posyandu-pagination-controls');
-        
-        // Modal elements
-        const wargaModal = document.getElementById('warga-modal');
-        const wargaModalTitle = document.getElementById('warga-modal-title');
-        const closeWargaModalBtn = document.getElementById('close-warga-modal-btn');
-        const cancelWargaEditBtn = document.getElementById('cancel-warga-edit-btn');
-        const wargaForm = document.getElementById('warga-form');
-        const saveWargaBtn = document.getElementById('save-warga-btn');
-        const posyanduDocIdInput = document.getElementById('posyandu-doc-id');
-        const wargaDocIdInput = document.getElementById('warga-doc-id');
-        const wargaTableBody = document.getElementById('warga-table-body');
-        const statusWargaSelect = document.getElementById('status-warga');
-        const namaAnakInput = document.getElementById('nama-anak');
-        const tglLahirAnakInput = document.getElementById('tgl-lahir-anak');
-        const wargaPaginationControls = document.getElementById('warga-pagination-controls');
-
-        // Map Modal Elements
-        const mapModal = document.getElementById('map-modal');
-        const mapModalTitle = document.getElementById('map-modal-title');
-        const closeMapModalBtn = document.getElementById('close-map-modal-btn');
-        const distanceInfo = document.getElementById('distance-info');
-
-        // Excel Import Elements
-        const importExcelBtn = document.getElementById('import-excel-btn');
-        const excelFileInput = document.getElementById('excel-file-input');
-        const downloadTemplateBtn = document.getElementById('download-template-btn');
-        const exportMbgPdfBtn = document.getElementById('export-mbg-pdf-btn');
-        const saveMbgExcelBtn = document.getElementById('save-mbg-excel-btn');
-
-
-        let db, auth, collectionRef;
-        let unsubscribe = () => {};
-        let unsubscribeWarga = () => {};
-        let tomSelectDesa, tomSelectBulan;
-        let allWargaDocs = [];
-        let currentWargaPage = 1;
-        const wargaRowsPerPage = 5;
-        let allPosyanduDocs = [];
-        let currentPosyanduPage = 1;
-        const posyanduRowsPerPage = 10;
-        let map, userMarker, posyanduMarker, routeLine, locationWatcherId, userRadiusCircle;
-
-        // --- Helper Functions ---
-        const showStatus = (message, isError = false) => {
-            iziToast[isError ? 'error' : 'success']({
-                title: isError ? 'Gagal' : 'Sukses',
-                message: message,
-                position: 'bottomCenter',
-                timeout: 4000,
-                progressBarColor: isError ? 'rgb(220, 53, 69)' : 'rgb(25, 135, 84)',
-            });
-        };
-        
-        const generateRowHTML = (docData, docId) => {
-            const data = { ...Object.fromEntries(dataKeys.map(k => [k, ''])), ...docData };
-            const coord = data.titik_koordinat || '';
-            const coordCellHtml = coord ? `<td class="px-2 py-2 text-sm text-blue-600 hover:underline cursor-pointer coord-cell" data-coord="${coord}" data-name="${data.nama_posyandu}">${coord}</td>` : `<td class="px-2 py-2 text-sm">${coord}</td>`;
-
-            return `
-                <td class="px-2 py-2 text-center text-sm">
-                    <button class="edit-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${docId}">Edit</button>
-                    <button class="delete-btn text-btn text-red-600 hover:text-red-900" data-id="${docId}">Hapus</button>
-                </td>
-                <td class="px-2 py-2 text-sm">${data.kelurahan || ''}</td>
-                <td class="px-2 py-2 text-sm text-blue-600 hover:underline cursor-pointer nama-posyandu-cell" data-id="${docId}" data-name="${data.nama_posyandu}">${data.nama_posyandu || ''}</td>
-                <td class="px-2 py-2 text-sm">${data.alamat_posyandu || ''}</td>
-                ${coordCellHtml}
-                <td class="px-2 py-2 text-sm text-center bumil-cell">${data.bumil || 0}</td>
-                <td class="px-2 py-2 text-sm text-center busui-cell">${data.busui_0_5 || 0}</td>
-                <td class="px-2 py-2 text-sm text-center balita-cell">${data.balita_6_59 || 0}</td>
-                <td class="px-2 py-2 text-sm text-center">${data.jumlah_kader || 0}</td>
-                <td class="px-2 py-2 text-sm">${data.petugas_nama || ''}</td>
-                <td class="px-2 py-2 text-sm">${data.petugas_hp || ''}</td>
-            `;
-        }
-
-        const generateEditRowHTML = (docData = {}, isNew = false) => {
-            const data = { ...Object.fromEntries(dataKeys.map(k => [k, ''])), kelurahan: '', ...docData };
+        async function main() {
+            // --- Configuration ---
+            const firebaseConfig = {
+              apiKey: "AIzaSyDEsBHqtbN6S_Y8q3cPa4Q_ezcVo7vg68s",
+              authDomain: "data-mbg.firebaseapp.com",
+              projectId: "data-mbg",
+              storageBucket: "data-mbg.appspot.com",
+              messagingSenderId: "883332707974",
+              appId: "1:883332707974:web:e8ae210d1280d8fd624307",
+              measurementId: "G-9F31ZMDVN7"
+            };
             
-            return `
-                <td class="px-2 py-1 text-center">
-                    <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2">${isNew ? 'Tambah' : 'Simpan'}</button>
-                    <button class="cancel-btn text-btn text-gray-600 hover:text-gray-900">Batal</button>
-                </td>
-                <td class="px-2 py-1"><select class="edit-input w-full kelurahan-edit-input" ${isNew ? '' : 'disabled'}>${kelurahanList.map(k => `<option value="${k}" ${k === data.kelurahan ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
-                <td class="px-2 py-1"><input type="text" class="edit-input" data-key="nama_posyandu" value="${data.nama_posyandu || ''}" placeholder="Nama Posyandu"></td>
-                <td class="px-2 py-1"><input type="text" class="edit-input" data-key="alamat_posyandu" value="${data.alamat_posyandu || ''}" placeholder="Alamat"></td>
-                <td class="px-2 py-1"><input type="text" class="edit-input" data-key="titik_koordinat" value="${data.titik_koordinat || ''}" placeholder="Lat, Lng"></td>
-                <td class="px-2 py-1 text-sm text-center bumil-cell">${data.bumil || 0}</td>
-                <td class="px-2 py-1 text-sm text-center busui-cell">${data.busui_0_5 || 0}</td>
-                <td class="px-2 py-1 text-sm text-center balita-cell">${data.balita_6_59 || 0}</td>
-                <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center" data-key="jumlah_kader" value="${data.jumlah_kader || 0}"></td>
-                <td class="px-2 py-1"><input type="text" class="edit-input" data-key="petugas_nama" value="${data.petugas_nama || ''}" placeholder="Nama Petugas"></td>
-                <td class="px-2 py-1"><input type="text" class="edit-input" data-key="petugas_hp" value="${data.petugas_hp || ''}" placeholder="No. HP"></td>
-            `;
-        };
-
-        function getVisibleTableData() {
-            const headers = [
-                "Desa/Kelurahan", "Nama Posyandu", "Alamat Posyandu", "Titik Koordinat",
-                "Bumil", "Busui 0-5 Bulan", "BALITA 6-59 Bulan",
-                "Jumlah Kader", "Nama Petugas", "Nomor Hand Phone"
+            const kelurahanList = ["CIEMAS", "CIBENDA", "CIWARU", "MEKARJAYA", "GIRIMUKTI", "TAMANJAYA", "MANDRAJAYA", "SIDAMULYA", "MEKARSAKTI"];
+            const bulanList = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const dataKeys = [
+                'nama_posyandu', 'alamat_posyandu', 'titik_koordinat', 
+                'jumlah_kader', 
+                'petugas_nama', 'petugas_hp'
             ];
-
-            const rows = [];
-            previewBody.querySelectorAll('tr').forEach(row => {
-                if (row.dataset.id && row.children.length > 1) {
-                    const cells = Array.from(row.querySelectorAll('td'));
-                    rows.push(cells.slice(1, 11).map(cell => cell.textContent));
-                }
-            });
-
-            return { headers, rows };
-        }
-
-        function getWargaTableData() {
-            const posyanduName = wargaModal.dataset.posyanduName || 'Data';
-            const headers = [
-                "Nama Posyandu", "Nama KK", "Nama Ibu", "Nama Anak", "Tgl Lahir", "Usia", "Status"
-            ];
-            const rows = allWargaDocs.map(doc => {
-                const data = doc.data();
-                const age = calculateAge(data.tgl_lahir_anak);
-                return [
-                    posyanduName,
-                    data.nama_kk || '',
-                    data.nama_ibu || '',
-                    data.nama_anak || '',
-                    data.tgl_lahir_anak || '',
-                    age.formatted,
-                    data.status || ''
-                ];
-            });
-            return { headers, rows, posyanduName };
-        }
-
-
-        // --- Firestore Core Logic ---
-        async function updatePosyanduCounts(posyanduId) {
-            if (!posyanduId) return;
-            const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
-            const wargaSnapshot = await getDocs(wargaCollectionRef);
-
-            let bumilCount = 0;
-            let busui_0_5_Count = 0;
-            let balita_6_59_Count = 0;
-
-            wargaSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.status === 'BUMIL') {
-                    bumilCount++;
-                } else if (data.tgl_lahir_anak) { 
-                    const ageInfo = calculateAge(data.tgl_lahir_anak);
-                    if (ageInfo.totalMonths <= 5) {
-                        busui_0_5_Count++;
-                    } else if (ageInfo.totalMonths >= 6 && ageInfo.totalMonths <= 59) {
-                        balita_6_59_Count++;
-                    }
-                }
-            });
-
-            const posyanduDocRef = doc(db, collectionRef.path, posyanduId);
-            try {
-                await updateDoc(posyanduDocRef, {
-                    bumil: bumilCount,
-                    busui_0_5: busui_0_5_Count,
-                    balita_6_59: balita_6_59_Count
-                });
-            } catch (error) {
-                console.error("Error updating posyandu counts:", error);
-                // Do not show a user-facing error for this background update to avoid spam
-            }
-        }
-
-        function displayPosyanduPage() {
-            previewBody.innerHTML = '';
             
-            if (allPosyanduDocs.length === 0) {
-                previewBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
-                setupPosyanduPaginationControls();
-                return;
-            }
-
-            const startIndex = (currentPosyanduPage - 1) * posyanduRowsPerPage;
-            const endIndex = startIndex + posyanduRowsPerPage;
-            const pageDocs = allPosyanduDocs.slice(startIndex, endIndex);
-
-            pageDocs.forEach(doc => {
-                const data = doc.data();
-                const row = previewBody.insertRow();
-                row.dataset.id = doc.id;
-                row.dataset.originalData = JSON.stringify(data);
-                row.innerHTML = generateRowHTML(data, doc.id);
-            });
-            setupPosyanduPaginationControls();
-        }
-
-        function setupPosyanduPaginationControls() {
-            posyanduPaginationControls.innerHTML = '';
-            const pageCount = Math.ceil(allPosyanduDocs.length / posyanduRowsPerPage);
-            if (pageCount <= 1) return;
-
-            let html = `<div class="flex-1 text-sm text-gray-700">Halaman ${currentPosyanduPage} dari ${pageCount}</div>`;
-            html += '<div>';
-            if (currentPosyanduPage > 1) {
-                html += `<button id="prev-posyandu-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Sebelumnya</button>`;
-            }
-            if (currentPosyanduPage < pageCount) {
-                html += `<button id="next-posyandu-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Berikutnya</button>`;
-            }
-            html += '</div>';
-            posyanduPaginationControls.innerHTML = html;
-
-            const prevBtn = document.getElementById('prev-posyandu-page');
-            const nextBtn = document.getElementById('next-posyandu-page');
-
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    currentPosyanduPage--;
-                    displayPosyanduPage();
-                });
-            }
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    currentPosyanduPage++;
-                    displayPosyanduPage();
-                });
-            }
-        }
-
-        function fetchAndRenderData() {
-            if (!collectionRef) return;
-            if (unsubscribe) unsubscribe(); 
-
-            loadingIndicator.style.display = 'block';
-            previewBody.innerHTML = '';
+            // --- DOM Elements ---
+            const previewBody = document.getElementById('preview-body');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const filterProvinsiSelect = document.getElementById('filter-provinsi');
+            const filterKabupatenSelect = document.getElementById('filter-kabupaten');
+            const filterKecamatanSelect = document.getElementById('filter-kecamatan');
+            const filterKelurahanSelect = document.getElementById('filter-kelurahan');
+            const filterBulanSelect = document.getElementById('filter-bulan');
+            const filterTahunInput = document.getElementById('filter-tahun');
+            const resetFilterBtn = document.getElementById('reset-filter-btn');
+            const addRowBtn = document.getElementById('add-row-btn');
+            const exportDropdownBtn = document.getElementById('export-dropdown-btn');
+            const updateAppBtn = document.getElementById('update-app-btn');
+            const posyanduPaginationControls = document.getElementById('posyandu-pagination-controls');
             
-            const filters = [];
-            if (tomSelectDesa && tomSelectDesa.getValue()) filters.push(where("kelurahan", "==", tomSelectDesa.getValue()));
-            if (tomSelectBulan && tomSelectBulan.getValue()) filters.push(where("bulan", "==", tomSelectBulan.getValue()));
-            if (filterTahunInput.value) filters.push(where("tahun", "==", Number(filterTahunInput.value)));
+            // Modal elements
+            const wargaModal = document.getElementById('warga-modal');
+            const wargaModalTitle = document.getElementById('warga-modal-title');
+            const closeWargaModalBtn = document.getElementById('close-warga-modal-btn');
+            const cancelWargaEditBtn = document.getElementById('cancel-warga-edit-btn');
+            const wargaForm = document.getElementById('warga-form');
+            const saveWargaBtn = document.getElementById('save-warga-btn');
+            const posyanduDocIdInput = document.getElementById('posyandu-doc-id');
+            const wargaDocIdInput = document.getElementById('warga-doc-id');
+            const wargaTableBody = document.getElementById('warga-table-body');
+            const statusWargaSelect = document.getElementById('status-warga');
+            const namaAnakInput = document.getElementById('nama-anak');
+            const tglLahirAnakInput = document.getElementById('tgl-lahir-anak');
+            const wargaPaginationControls = document.getElementById('warga-pagination-controls');
 
-            const q = query(collectionRef, ...filters);
+            // Map Modal Elements
+            const mapModal = document.getElementById('map-modal');
+            const mapModalTitle = document.getElementById('map-modal-title');
+            const closeMapModalBtn = document.getElementById('close-map-modal-btn');
+            const distanceInfo = document.getElementById('distance-info');
 
-            unsubscribe = onSnapshot(q, (snapshot) => {
-                loadingIndicator.style.display = 'none';
-                
-                let docs = snapshot.docs;
-                docs.sort((a, b) => {
-                    const dataA = a.data();
-                    const dataB = b.data();
-                    const kelurahanCompare = (dataA.kelurahan || "").localeCompare(dataB.kelurahan || "");
-                    if (kelurahanCompare !== 0) return kelurahanCompare;
-                    return (dataA.nama_posyandu || "").localeCompare(dataB.nama_posyandu || "");
+            // Excel Import Elements
+            const importExcelBtn = document.getElementById('import-excel-btn');
+            const excelFileInput = document.getElementById('excel-file-input');
+            const downloadTemplateBtn = document.getElementById('download-template-btn');
+            const exportPosyanduDataPdfBtn = document.getElementById('export-posyandu-data-pdf-btn');
+            const savePosyanduDataExcelBtn = document.getElementById('save-posyandu-data-excel-btn');
+
+            // Voice Search Elements
+            const voiceSearchBtn = document.getElementById('voice-search-btn');
+            const voiceSearchModal = document.getElementById('voice-search-modal');
+            const closeVoiceSearchModalBtn = document.getElementById('close-voice-search-modal-btn');
+            const startRecognitionBtn = document.getElementById('start-recognition-btn');
+            const voiceStatus = document.getElementById('voice-status');
+            const voiceResult = document.getElementById('voice-result');
+            const voiceSearchResultsList = document.getElementById('voice-search-results-list');
+            const voiceResultsTitle = document.getElementById('voice-results-title');
+
+            // Pengukuran Modal Elements
+            const pengukuranModal = document.getElementById('pengukuran-modal');
+            const closePengukuranModalBtn = document.getElementById('close-pengukuran-modal-btn');
+            const pengukuranForm = document.getElementById('pengukuran-form');
+            const savePengukuranBtn = document.getElementById('save-pengukuran-btn');
+            const cancelPengukuranBtn = document.getElementById('cancel-pengukuran-btn');
+
+            // --- Module-level state variables ---
+            let db, auth, collectionRef, recognition;
+            let unsubscribe = () => {};
+            let unsubscribeWarga = () => {};
+            let tomSelectDesa, tomSelectBulan;
+            let allWargaDocs = [];
+            let currentWargaPage = 1;
+            const wargaRowsPerPage = 5;
+            let allPosyanduDocs = [];
+            let currentPosyanduPage = 1;
+            const posyanduRowsPerPage = 10;
+            let map, userMarker, posyanduMarker, routeLine, locationWatcherId, userRadiusCircle;
+
+            // --- Helper Functions ---
+            const showStatus = (message, isError = false) => {
+                iziToast[isError ? 'error' : 'success']({
+                    title: isError ? 'Gagal' : 'Sukses',
+                    message: message,
+                    position: 'bottomCenter',
+                    timeout: 4000,
+                    progressBarColor: isError ? 'rgb(220, 53, 69)' : 'rgb(25, 135, 84)',
                 });
-                
-                allPosyanduDocs = docs;
-                currentPosyanduPage = 1;
-                displayPosyanduPage();
+            };
+            
+            const generateRowHTML = (docData, docId) => {
+                const data = { ...Object.fromEntries(dataKeys.map(k => [k, ''])), ...docData };
+                const coord = data.titik_koordinat || '';
+                const coordCellHtml = coord ? `<td class="px-2 py-2 text-sm text-blue-600 hover:underline cursor-pointer coord-cell" data-coord="${coord}" data-name="${data.nama_posyandu}">${coord}</td>` : `<td class="px-2 py-2 text-sm">${coord}</td>`;
 
-                exportDropdownBtn.disabled = allPosyanduDocs.length === 0;
-                exportDropdownBtn.classList.toggle('btn-disabled', allPosyanduDocs.length === 0);
-
-            }, (error) => {
-                console.error("Error fetching data: ", error);
-                loadingIndicator.textContent = "Gagal memuat data.";
-                showStatus("Gagal memuat data: " + error.message, true);
-            });
-        }
-        
-        // --- Modal Logic ---
-        function handleStatusChange() {
-            const status = statusWargaSelect.value;
-            if (status === 'BUMIL') {
-                namaAnakInput.disabled = true;
-                namaAnakInput.value = '';
-                tglLahirAnakInput.disabled = true;
-                tglLahirAnakInput.value = '';
-            } else {
-                namaAnakInput.disabled = false;
-                tglLahirAnakInput.disabled = false;
-            }
-        }
-
-        function calculateAge(birthDateString) {
-            if (!birthDateString) return { years: 0, months: 0, totalMonths: 0, formatted: '-' };
-            const birthDate = new Date(birthDateString);
-            const today = new Date();
-            let years = today.getFullYear() - birthDate.getFullYear();
-            let months = today.getMonth() - birthDate.getMonth();
-            if (months < 0 || (months === 0 && today.getDate() < birthDate.getDate())) {
-                years--;
-                months += 12;
-            }
-            const totalMonths = years * 12 + months;
-            return { years, months, totalMonths, formatted: `${years} Thn, ${months} Bln` };
-        }
-
-        function displayWargaPage() {
-            const posyanduName = wargaModal.dataset.posyanduName || '';
-            wargaTableBody.innerHTML = '';
-            if (allWargaDocs.length === 0) {
-                 wargaTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Belum ada data MBG.</td></tr>`;
-                 setupPaginationControls();
-                 return;
+                return `
+                    <td class="px-2 py-2 text-center text-sm">
+                        <button class="edit-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${docId}">Edit</button>
+                        <button class="delete-btn text-btn text-red-600 hover:text-red-900" data-id="${docId}">Hapus</button>
+                    </td>
+                    <td class="px-2 py-2 text-sm">${data.kelurahan || ''}</td>
+                    <td class="px-2 py-2 text-sm text-blue-600 hover:underline cursor-pointer nama-posyandu-cell" data-id="${docId}" data-name="${data.nama_posyandu}">${data.nama_posyandu || ''}</td>
+                    <td class="px-2 py-2 text-sm">${data.alamat_posyandu || ''}</td>
+                    ${coordCellHtml}
+                    <td class="px-2 py-2 text-sm text-center bumil-cell">${data.bumil || 0}</td>
+                    <td class="px-2 py-2 text-sm text-center busui-0-5-cell">${data.busui_0_5 || 0}</td>
+                    <td class="px-2 py-2 text-sm text-center balita-6-59-cell">${data.balita_6_59 || 0}</td>
+                    <td class="px-2 py-2 text-sm text-center busui-0-12-cell">${data.busui_0_12 || 0}</td>
+                    <td class="px-2 py-2 text-sm text-center balita-13-59-cell">${data.balita_13_59 || 0}</td>
+                    <td class="px-2 py-2 text-sm text-center">${data.jumlah_kader || 0}</td>
+                    <td class="px-2 py-2 text-sm">${data.petugas_nama || ''}</td>
+                    <td class="px-2 py-2 text-sm">${data.petugas_hp || ''}</td>
+                `;
             }
 
-            const startIndex = (currentWargaPage - 1) * wargaRowsPerPage;
-            const endIndex = startIndex + wargaRowsPerPage;
-            const pageDocs = allWargaDocs.slice(startIndex, endIndex);
-
-            const wargaRowsHtml = pageDocs.map(doc => {
-                const data = doc.data();
-                const age = calculateAge(data.tgl_lahir_anak);
-                const rowClass = age.totalMonths > 59 ? 'bg-red-100' : '';
+            const generateEditRowHTML = (docData = {}, isNew = false) => {
+                const data = { ...Object.fromEntries(dataKeys.map(k => [k, ''])), kelurahan: '', ...docData };
                 
                 return `
-                    <tr class="${rowClass}" data-id="${doc.id}" data-original-data='${JSON.stringify(data)}'>
-                        <td class="px-2 py-2 text-sm whitespace-nowrap">
-                            <button class="edit-warga-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${doc.id}">Edit</button>
-                            <button class="delete-warga-btn text-btn text-red-600 hover:text-red-900" data-id="${doc.id}">Hapus</button>
-                        </td>
-                        <td class="px-2 py-2 text-sm">${posyanduName}</td>
-                        <td class="px-2 py-2 text-sm">${data.nama_kk || ''}</td>
-                        <td class="px-2 py-2 text-sm">${data.nama_ibu || ''}</td>
-                        <td class="px-2 py-2 text-sm">${data.nama_anak || ''}</td>
-                        <td class="px-2 py-2 text-sm">${data.tgl_lahir_anak || ''}</td>
-                        <td class="px-2 py-2 text-sm">${age.formatted}</td>
-                        <td class="px-2 py-2 text-sm">${data.status || ''}</td>
-                    </tr>
+                    <td class="px-2 py-1 text-center">
+                        <button class="save-btn text-btn text-green-600 hover:text-green-900 mr-2">${isNew ? 'Tambah' : 'Simpan'}</button>
+                        <button class="cancel-btn text-btn text-gray-600 hover:text-gray-900">Batal</button>
+                    </td>
+                    <td class="px-2 py-1"><select class="edit-input w-full kelurahan-edit-input" ${isNew ? '' : 'disabled'}>${kelurahanList.map(k => `<option value="${k}" ${k === data.kelurahan ? 'selected' : ''}>${k}</option>`).join('')}</select></td>
+                    <td class="px-2 py-1"><input type="text" class="edit-input" data-key="nama_posyandu" value="${data.nama_posyandu || ''}" placeholder="Nama Posyandu"></td>
+                    <td class="px-2 py-1"><input type="text" class="edit-input" data-key="alamat_posyandu" value="${data.alamat_posyandu || ''}" placeholder="Alamat"></td>
+                    <td class="px-2 py-1"><input type="text" class="edit-input" data-key="titik_koordinat" value="${data.titik_koordinat || ''}" placeholder="Lat, Lng"></td>
+                    <td class="px-2 py-1 text-sm text-center bumil-cell">${data.bumil || 0}</td>
+                    <td class="px-2 py-1 text-sm text-center busui-0-5-cell">${data.busui_0_5 || 0}</td>
+                    <td class="px-2 py-1 text-sm text-center balita-6-59-cell">${data.balita_6_59 || 0}</td>
+                    <td class="px-2 py-1 text-sm text-center busui-0-12-cell">${data.busui_0_12 || 0}</td>
+                    <td class="px-2 py-1 text-sm text-center balita-13-59-cell">${data.balita_13_59 || 0}</td>
+                    <td class="px-2 py-1"><input type="number" class="edit-input w-20 text-center" data-key="jumlah_kader" value="${data.jumlah_kader || 0}"></td>
+                    <td class="px-2 py-1"><input type="text" class="edit-input" data-key="petugas_nama" value="${data.petugas_nama || ''}" placeholder="Nama Petugas"></td>
+                    <td class="px-2 py-1"><input type="text" class="edit-input" data-key="petugas_hp" value="${data.petugas_hp || ''}" placeholder="No. HP"></td>
                 `;
-            }).join('');
-            wargaTableBody.innerHTML = wargaRowsHtml;
-            setupPaginationControls();
-        }
-
-        function setupPaginationControls() {
-            wargaPaginationControls.innerHTML = '';
-            const pageCount = Math.ceil(allWargaDocs.length / wargaRowsPerPage);
-            if (pageCount <= 1) return;
-
-            let html = `<div class="flex-1 text-sm text-gray-700">Halaman ${currentWargaPage} dari ${pageCount}</div>`;
-            html += '<div>';
-            if (currentWargaPage > 1) {
-                html += `<button id="prev-warga-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Sebelumnya</button>`;
-            }
-            if (currentWargaPage < pageCount) {
-                html += `<button id="next-warga-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Berikutnya</button>`;
-            }
-            html += '</div>';
-            wargaPaginationControls.innerHTML = html;
-
-            const prevBtn = document.getElementById('prev-warga-page');
-            const nextBtn = document.getElementById('next-warga-page');
-
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    currentWargaPage--;
-                    displayWargaPage();
-                });
-            }
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    currentWargaPage++;
-                    displayWargaPage();
-                });
-            }
-        }
-
-        function openWargaModal(posyanduId, posyanduName) {
-            resetWargaForm();
-            posyanduDocIdInput.value = posyanduId;
-            wargaModalTitle.textContent = `Data MBG - ${posyanduName}`;
-            wargaModal.dataset.posyanduName = posyanduName; // Store for use in displayWargaPage
-            wargaModal.style.display = 'flex';
-
-            const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
-            const q = query(wargaCollectionRef); // Removed orderBy to prevent index errors
-
-            unsubscribeWarga = onSnapshot(q, (snapshot) => {
-                allWargaDocs = snapshot.docs.sort((a,b) => {
-                    const timeA = a.data().createdAt?.toMillis() || 0;
-                    const timeB = b.data().createdAt?.toMillis() || 0;
-                    return timeB - timeA; // Sort descending
-                });
-                currentWargaPage = 1;
-                displayWargaPage();
-            }, (error) => {
-                 console.error("Error fetching warga data:", error);
-                 showStatus("Gagal memuat data MBG: " + error.message, true);
-            });
-        }
-
-        function closeWargaModal() {
-            if (typeof unsubscribeWarga === 'function') {
-                unsubscribeWarga();
-            }
-            wargaModal.style.display = 'none';
-        }
-
-        function resetWargaForm() {
-            wargaForm.reset();
-            wargaDocIdInput.value = '';
-            saveWargaBtn.querySelector('.btn-text').textContent = 'Simpan';
-            cancelWargaEditBtn.classList.add('hidden');
-            // Remove validation classes
-            Array.from(wargaForm.elements).forEach(el => el.classList.remove('is-invalid'));
-            handleStatusChange(); // Set initial state for date input
-        }
-
-        // --- Map Modal Logic ---
-        function openMapModal(coordStr, posyanduName) {
-            mapModalTitle.textContent = `Peta Lokasi - ${posyanduName}`;
-            distanceInfo.textContent = 'Mencari lokasi Anda...';
-            mapModal.style.display = 'flex';
-
-            const parts = coordStr.split(',').map(s => parseFloat(s.trim()));
-            if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
-                showStatus('Format koordinat tidak valid.', true);
-                closeMapModal();
-                return;
-            }
-            const posyanduLatLng = L.latLng(parts[0], parts[1]);
-
-            if (map) {
-                map.remove();
-            }
-
-            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            });
-
-            const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            });
-
-            map = L.map('map', {
-                center: posyanduLatLng,
-                zoom: 15,
-                layers: [osmLayer], // Default layer
-                fullscreenControl: true,
-            });
-
-            const baseLayers = {
-                "Peta Jalan": osmLayer,
-                "Satelit": satelliteLayer
             };
 
-            L.control.layers(baseLayers).addTo(map);
-            
-            // Add custom refresh control
-            const RefreshControl = L.Control.extend({
-                onAdd: function(map) {
-                    const btn = L.DomUtil.create('button', 'leaflet-bar leaflet-control leaflet-control-custom bg-white p-2 rounded-md shadow-md hover:bg-gray-100');
-                    btn.innerHTML = `<svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12a8 8 0 11-8-8 8 8 0 018 8z"></path></svg>`;
-                    btn.title = "Refresh GPS";
+            const getAllFilteredTableData = () => {
+                const headers = [
+                    "Desa/Kelurahan", "Nama Posyandu", "Alamat Posyandu", "Titik Koordinat",
+                    "Bumil", "BUSUI 0-5 BULAN", "BALITA 6-59 BULAN", "BUSUI 0-12 BULAN", "BALITA 13-59 BULAN",
+                    "Jumlah Kader", "Nama Petugas", "Nomor Hand Phone"
+                ];
 
-                    L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
-                              .on(btn, 'click', L.DomEvent.preventDefault)
-                              .on(btn, 'click', () => {
-                                  const icon = btn.querySelector('svg');
-                                  icon.classList.add('spinner');
-                                  btn.disabled = true;
-
-                                  navigator.geolocation.getCurrentPosition(
-                                      (position) => {
-                                          updateUserLocationOnMap(position, posyanduLatLng);
-                                          icon.classList.remove('spinner');
-                                          btn.disabled = false;
-                                          showStatus("Lokasi GPS berhasil diperbarui.");
-                                      },
-                                      (error) => {
-                                          handleLocationError(error);
-                                          icon.classList.remove('spinner');
-                                          btn.disabled = false;
-                                      },
-                                      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                                  );
-                              });
-                    return btn;
-                }
-            });
-            new RefreshControl({ position: 'bottomright' }).addTo(map);
-
-
-            posyanduMarker = L.marker(posyanduLatLng).addTo(map).bindPopup(`<b>${posyanduName}</b>`).openPopup();
-
-            if (!navigator.geolocation) {
-                showStatus('Geolocation tidak didukung oleh browser Anda.', true);
-                distanceInfo.textContent = 'Geolocation tidak didukung.';
-                return;
-            }
-
-            locationWatcherId = navigator.geolocation.watchPosition(
-                (position) => updateUserLocationOnMap(position, posyanduLatLng),
-                handleLocationError
-            );
-        }
-        
-        function updateUserLocationOnMap(position, posyanduLatLng) {
-            const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
-            const distance = userLatLng.distanceTo(posyanduLatLng);
-            const isTooFar = distance > 6000;
-
-            // Precise User Location Marker (a simple blue dot)
-            if (!userMarker) {
-                userMarker = L.circleMarker(userLatLng, {
-                    radius: 8,
-                    fillColor: "#1e90ff",
-                    color: "#fff",
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.9
-                }).addTo(map).bindPopup('<b>Lokasi Anda</b>');
-            } else {
-                userMarker.setLatLng(userLatLng);
-            }
-
-            // 6km Radius Circle
-            const radiusCircleOptions = {
-                radius: 6000,
-                weight: 2,
-                fillOpacity: 0.1,
-                color: isTooFar ? 'red' : 'blue',
-                fillColor: isTooFar ? '#f03' : '#30f'
-            };
-
-            if (!userRadiusCircle) {
-                userRadiusCircle = L.circle(userLatLng, radiusCircleOptions).addTo(map);
-            } else {
-                userRadiusCircle.setLatLng(userLatLng).setStyle(radiusCircleOptions);
-            }
-
-            // Apply or remove pulsing animation class from the 6km circle's SVG path
-            const circleElement = userRadiusCircle.getElement();
-            if (circleElement) {
-                if (isTooFar) {
-                    circleElement.classList.add('pulse-red-circle');
-                } else {
-                    circleElement.classList.remove('pulse-red-circle');
-                }
-            }
-
-            // Route line
-            if (routeLine) {
-                map.removeLayer(routeLine);
-            }
-            routeLine = L.polyline([posyanduLatLng, userLatLng], {color: 'green'}).addTo(map);
-            
-            // Center the view on the user without excessive zooming
-            if (!map.getBounds().contains(userLatLng)) {
-                map.panTo(userLatLng);
-            }
-
-            distanceInfo.textContent = `Jarak ke Posyandu: ${distance.toFixed(0)} meter.`;
-        }
-
-
-        function handleLocationError(error) {
-            let userMessage = 'Gagal mengakses lokasi Anda.';
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    userMessage = "Anda perlu memberikan izin lokasi agar fitur ini berfungsi.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    userMessage = "Informasi lokasi tidak tersedia saat ini.";
-                    break;
-                case error.TIMEOUT:
-                    userMessage = "Waktu permintaan lokasi habis. Coba lagi.";
-                    break;
-            }
-            showStatus(userMessage, true);
-            distanceInfo.textContent = userMessage;
-        }
-
-        function closeMapModal() {
-            if (locationWatcherId) {
-                navigator.geolocation.clearWatch(locationWatcherId);
-            }
-            if (map) {
-                map.remove();
-                map = null;
-                userMarker = null;
-                routeLine = null;
-                userRadiusCircle = null; 
-            }
-            mapModal.style.display = 'none';
-        }
-        
-        // --- Event Listeners ---
-        previewBody.addEventListener('click', async (e) => {
-            const target = e.target;
-            const row = target.closest('tr');
-            if (!row) return;
-
-            const docId = row.dataset.id;
-            const saveBtn = target.closest('.save-btn');
-
-            if (target.closest('.edit-btn')) {
-                const originalData = JSON.parse(row.dataset.originalData || '{}');
-                row.innerHTML = generateEditRowHTML(originalData, false);
-            } else if (target.closest('.delete-btn')) {
-                iziToast.question({
-                    timeout: 20000, close: false, overlay: true, displayMode: 'once', id: 'question',
-                    zindex: 1001, title: 'Konfirmasi', message: 'Anda yakin ingin menghapus baris ini?', position: 'center',
-                    buttons: [
-                        ['<button><b>YA</b></button>', async function (instance, toast) {
-                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                            try {
-                                await deleteDoc(doc(db, collectionRef.path, docId));
-                                showStatus("Data berhasil dihapus.", false);
-                            } catch(error) {
-                                console.error("Error deleting document: ", error);
-                                showStatus("Gagal menghapus data.", true);
-                            }
-                        }, true],
-                        ['<button>TIDAK</button>', function (instance, toast) {
-                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                        }],
-                    ]
+                const rows = allPosyanduDocs.map(doc => {
+                    const data = doc.data();
+                    return [
+                        data.kelurahan || '',
+                        data.nama_posyandu || '',
+                        data.alamat_posyandu || '',
+                        data.titik_koordinat || '',
+                        data.bumil || 0,
+                        data.busui_0_5 || 0,
+                        data.balita_6_59 || 0,
+                        data.busui_0_12 || 0,
+                        data.balita_13_59 || 0,
+                        data.jumlah_kader || 0,
+                        data.petugas_nama || '',
+                        data.petugas_hp || ''
+                    ];
                 });
-            } else if (target.closest('.cancel-btn')) {
-                if (row.dataset.isNew) {
-                    row.remove();
-                } else {
-                    const originalData = JSON.parse(row.dataset.originalData);
-                    row.innerHTML = generateRowHTML(originalData, docId);
-                }
-            } else if (target.closest('.nama-posyandu-cell')) {
-                openWargaModal(target.closest('.nama-posyandu-cell').dataset.id, target.closest('.nama-posyandu-cell').dataset.name);
-            } else if (target.closest('.coord-cell')) {
-                openMapModal(target.closest('.coord-cell').dataset.coord, target.closest('.coord-cell').dataset.name);
-            } else if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Menyimpan...';
 
-                const isNew = row.dataset.isNew === 'true';
-                const originalData = isNew ? {} : JSON.parse(row.dataset.originalData);
+                return { headers, rows };
+            }
 
-                const dataPayload = {
-                    kelurahan: row.querySelector('.kelurahan-edit-input').value,
-                    bulan: isNew ? (tomSelectBulan.getValue() || bulanList[new Date().getMonth()]) : originalData.bulan,
-                    tahun: isNew ? (Number(filterTahunInput.value) || new Date().getFullYear()) : originalData.tahun,
-                };
-                
-                dataKeys.forEach(key => {
-                    const input = row.querySelector(`[data-key="${key}"]`);
-                    if (input) {
-                        dataPayload[key] = input.value;
+            const getWargaTableData = () => {
+                const posyanduName = wargaModal.dataset.posyanduName || 'Data';
+                const headers = [
+                    "Nama Posyandu", "Nama KK", "Nama Ibu", "Nama Anak", "Tgl Lahir", "Usia", "Status"
+                ];
+                const rows = allWargaDocs.map(doc => {
+                    const data = doc.data();
+                    const age = calculateAge(data.tgl_lahir_anak);
+                    return [
+                        posyanduName,
+                        data.nama_kk || '',
+                        data.nama_ibu || '',
+                        data.nama_anak || '',
+                        data.tgl_lahir_anak || '',
+                        age.formatted,
+                        data.status || ''
+                    ];
+                });
+                return { headers, rows, posyanduName };
+            }
+
+
+            // --- Firestore Core Logic ---
+            async function updatePosyanduCounts(posyanduId) {
+                if (!posyanduId) return;
+                const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
+                const wargaSnapshot = await getDocs(wargaCollectionRef);
+
+                let bumilCount = 0;
+                let busui_0_5_Count = 0;
+                let balita_6_59_Count = 0;
+                let busui_0_12_Count = 0;
+                let balita_13_59_Count = 0;
+
+                wargaSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.status === 'BUMIL') {
+                        bumilCount++;
+                    } else if (data.tgl_lahir_anak) { 
+                        const ageInfo = calculateAge(data.tgl_lahir_anak);
+                        if (ageInfo.totalMonths >= 0 && ageInfo.totalMonths <= 5) {
+                            busui_0_5_Count++;
+                        } 
+                        if (ageInfo.totalMonths >= 6 && ageInfo.totalMonths <= 59) {
+                            balita_6_59_Count++;
+                        }
+                        if (ageInfo.totalMonths >= 0 && ageInfo.totalMonths <= 12) {
+                            busui_0_12_Count++;
+                        }
+                        if (ageInfo.totalMonths >= 13 && ageInfo.totalMonths <= 59) {
+                            balita_13_59_Count++;
+                        }
                     }
                 });
 
-                if (isNew) {
-                    dataPayload.bumil = 0;
-                    dataPayload.busui_0_5 = 0;
-                    dataPayload.balita_6_59 = 0;
+                const posyanduDocRef = doc(db, collectionRef.path, posyanduId);
+                try {
+                    await updateDoc(posyanduDocRef, {
+                        bumil: bumilCount,
+                        busui_0_5: busui_0_5_Count,
+                        balita_6_59: balita_6_59_Count,
+                        busui_0_12: busui_0_12_Count,
+                        balita_13_59: balita_13_59_Count
+                    });
+                } catch (error) {
+                    console.error("Error updating posyandu counts:", error);
                 }
+            }
+
+            const displayPosyanduPage = () => {
+                previewBody.innerHTML = '';
                 
-                const namaPosyanduInput = row.querySelector('[data-key="nama_posyandu"]');
-                namaPosyanduInput.classList.remove('is-invalid');
-                if (!dataPayload.nama_posyandu) {
-                    showStatus('Nama Posyandu tidak boleh kosong.', true);
-                    namaPosyanduInput.classList.add('is-invalid');
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = isNew ? 'Tambah' : 'Simpan';
+                if (allPosyanduDocs.length === 0) {
+                    previewBody.innerHTML = `<tr><td colspan="13" class="text-center py-4 text-gray-500">Tidak ada data yang cocok dengan filter.</td></tr>`;
+                    document.getElementById('main-table-footer').innerHTML = '';
+                    setupPosyanduPaginationControls();
+                    return;
+                }
+
+                const startIndex = (currentPosyanduPage - 1) * posyanduRowsPerPage;
+                const endIndex = startIndex + posyanduRowsPerPage;
+                const pageDocs = allPosyanduDocs.slice(startIndex, endIndex);
+
+                pageDocs.forEach(doc => {
+                    const data = doc.data();
+                    const row = previewBody.insertRow();
+                    row.dataset.id = doc.id;
+                    row.dataset.originalData = JSON.stringify(data);
+                    row.innerHTML = generateRowHTML(data, doc.id);
+                });
+                setupPosyanduPaginationControls();
+                updateTableFooter();
+            }
+
+            const updateTableFooter = () => {
+                const footer = document.getElementById('main-table-footer');
+                if (!footer) return;
+
+                let totalBumil = 0;
+                let totalBusui0_5 = 0;
+                let totalBalita6_59 = 0;
+                let totalBusui0_12 = 0;
+                let totalBalita13_59 = 0;
+                let totalKader = 0;
+
+                allPosyanduDocs.forEach(doc => {
+                    const data = doc.data();
+                    totalBumil += data.bumil || 0;
+                    totalBusui0_5 += data.busui_0_5 || 0;
+                    totalBalita6_59 += data.balita_6_59 || 0;
+                    totalBusui0_12 += data.busui_0_12 || 0;
+                    totalBalita13_59 += data.balita_13_59 || 0;
+                    totalKader += Number(data.jumlah_kader) || 0;
+                });
+
+                footer.innerHTML = `
+                    <tr>
+                        <td class="px-2 py-3 text-right" colspan="5">JUMLAH</td>
+                        <td class="px-2 py-3 text-center">${totalBumil}</td>
+                        <td class="px-2 py-3 text-center">${totalBusui0_5}</td>
+                        <td class="px-2 py-3 text-center">${totalBalita6_59}</td>
+                        <td class="px-2 py-3 text-center">${totalBusui0_12}</td>
+                        <td class="px-2 py-3 text-center">${totalBalita13_59}</td>
+                        <td class="px-2 py-3 text-center">${totalKader}</td>
+                        <td class="px-2 py-3" colspan="2"></td>
+                    </tr>
+                `;
+            }
+
+            const setupPosyanduPaginationControls = () => {
+                posyanduPaginationControls.innerHTML = '';
+                const pageCount = Math.ceil(allPosyanduDocs.length / posyanduRowsPerPage);
+                if (pageCount <= 1) return;
+
+                let html = `<div class="flex-1 text-sm text-gray-700">Halaman ${currentPosyanduPage} dari ${pageCount}</div>`;
+                html += '<div>';
+                if (currentPosyanduPage > 1) {
+                    html += `<button id="prev-posyandu-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Sebelumnya</button>`;
+                }
+                if (currentPosyanduPage < pageCount) {
+                    html += `<button id="next-posyandu-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Berikutnya</button>`;
+                }
+                html += '</div>';
+                posyanduPaginationControls.innerHTML = html;
+
+                const prevBtn = document.getElementById('prev-posyandu-page');
+                const nextBtn = document.getElementById('next-posyandu-page');
+
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        currentPosyanduPage--;
+                        displayPosyanduPage();
+                    });
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        currentPosyanduPage++;
+                        displayPosyanduPage();
+                    });
+                }
+            }
+
+            const fetchAndRenderData = () => {
+                if (!collectionRef) return;
+                if (unsubscribe) unsubscribe(); 
+
+                loadingIndicator.style.display = 'block';
+                previewBody.innerHTML = '';
+                
+                const filters = [];
+                if (tomSelectDesa && tomSelectDesa.getValue()) filters.push(where("kelurahan", "==", tomSelectDesa.getValue()));
+                if (tomSelectBulan && tomSelectBulan.getValue()) filters.push(where("bulan", "==", tomSelectBulan.getValue()));
+                if (filterTahunInput.value) filters.push(where("tahun", "==", Number(filterTahunInput.value)));
+
+                const q = query(collectionRef, ...filters);
+
+                unsubscribe = onSnapshot(q, (snapshot) => {
+                    loadingIndicator.style.display = 'none';
+                    
+                    let docs = snapshot.docs;
+                    docs.sort((a, b) => {
+                        const dataA = a.data();
+                        const dataB = b.data();
+                        const kelurahanCompare = (dataA.kelurahan || "").localeCompare(dataB.kelurahan || "");
+                        if (kelurahanCompare !== 0) return kelurahanCompare;
+                        return (dataA.nama_posyandu || "").localeCompare(dataB.nama_posyandu || "");
+                    });
+                    
+                    allPosyanduDocs = docs;
+                    currentPosyanduPage = 1;
+                    displayPosyanduPage();
+
+                    exportDropdownBtn.disabled = allPosyanduDocs.length === 0;
+                    exportDropdownBtn.classList.toggle('btn-disabled', allPosyanduDocs.length === 0);
+
+                }, (error) => {
+                    console.error("Error fetching data: ", error);
+                    loadingIndicator.textContent = "Gagal memuat data.";
+                    showStatus("Gagal memuat data: " + error.message, true);
+                });
+            }
+            
+            // --- Modal Logic ---
+            const handleStatusChange = () => {
+                const status = statusWargaSelect.value;
+                if (status === 'BUMIL') {
+                    namaAnakInput.disabled = true;
+                    namaAnakInput.value = '';
+                    tglLahirAnakInput.disabled = true;
+                    tglLahirAnakInput.value = '';
+                } else {
+                    namaAnakInput.disabled = false;
+                    tglLahirAnakInput.disabled = false;
+                }
+            }
+
+            const calculateAge = (birthDateString) => {
+                if (!birthDateString) return { years: 0, months: 0, totalMonths: 0, formatted: '-' };
+                const birthDate = new Date(birthDateString);
+                const today = new Date();
+                let years = today.getFullYear() - birthDate.getFullYear();
+                let months = today.getMonth() - birthDate.getMonth();
+                if (months < 0 || (months === 0 && today.getDate() < birthDate.getDate())) {
+                    years--;
+                    months += 12;
+                }
+                const totalMonths = years * 12 + months;
+                return { years, months, totalMonths, formatted: `${years} Thn, ${months} Bln` };
+            }
+
+            const displayWargaPage = () => {
+                const posyanduName = wargaModal.dataset.posyanduName || '';
+                wargaTableBody.innerHTML = '';
+                if (allWargaDocs.length === 0) {
+                     wargaTableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Belum ada data Posyandu.</td></tr>`;
+                     setupPaginationControls();
+                     return;
+                }
+
+                const startIndex = (currentWargaPage - 1) * wargaRowsPerPage;
+                const endIndex = startIndex + wargaRowsPerPage;
+                const pageDocs = allWargaDocs.slice(startIndex, endIndex);
+
+                const wargaRowsHtml = pageDocs.map(doc => {
+                    const data = doc.data();
+                    const age = calculateAge(data.tgl_lahir_anak);
+                    const rowClass = age.totalMonths > 59 ? 'bg-red-100' : '';
+                    
+                    return `
+                        <tr class="${rowClass}" data-id="${doc.id}" data-original-data='${JSON.stringify(data)}'>
+                            <td class="px-2 py-2 text-sm whitespace-nowrap">
+                                <button class="edit-warga-btn text-btn text-indigo-600 hover:text-indigo-900 mr-2" data-id="${doc.id}">Edit</button>
+                                <button class="delete-warga-btn text-btn text-red-600 hover:text-red-900" data-id="${doc.id}">Hapus</button>
+                            </td>
+                            <td class="px-2 py-2 text-sm">${posyanduName}</td>
+                            <td class="px-2 py-2 text-sm">${data.nama_kk || ''}</td>
+                            <td class="px-2 py-2 text-sm">${data.nama_ibu || ''}</td>
+                            <td class="px-2 py-2 text-sm">${data.nama_anak || ''}</td>
+                            <td class="px-2 py-2 text-sm">${data.tgl_lahir_anak || ''}</td>
+                            <td class="px-2 py-2 text-sm">${age.formatted}</td>
+                            <td class="px-2 py-2 text-sm">${data.status || ''}</td>
+                        </tr>
+                    `;
+                }).join('');
+                wargaTableBody.innerHTML = wargaRowsHtml;
+                setupPaginationControls();
+            }
+
+            const setupPaginationControls = () => {
+                wargaPaginationControls.innerHTML = '';
+                const pageCount = Math.ceil(allWargaDocs.length / wargaRowsPerPage);
+                if (pageCount <= 1) return;
+
+                let html = `<div class="flex-1 text-sm text-gray-700">Halaman ${currentWargaPage} dari ${pageCount}</div>`;
+                html += '<div>';
+                if (currentWargaPage > 1) {
+                    html += `<button id="prev-warga-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">Sebelumnya</button>`;
+                }
+                if (currentWargaPage < pageCount) {
+                    html += `<button id="next-warga-page" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r">Berikutnya</button>`;
+                }
+                html += '</div>';
+                wargaPaginationControls.innerHTML = html;
+
+                const prevBtn = document.getElementById('prev-warga-page');
+                const nextBtn = document.getElementById('next-warga-page');
+
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        currentWargaPage--;
+                        displayWargaPage();
+                    });
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        currentWargaPage++;
+                        displayWargaPage();
+                    });
+                }
+            }
+
+            const openWargaModal = (posyanduId, posyanduName) => {
+                resetWargaForm();
+                posyanduDocIdInput.value = posyanduId;
+                wargaModalTitle.textContent = `Data di Posyandu ${posyanduName}`;
+                wargaModal.dataset.posyanduName = posyanduName; 
+                wargaModal.style.display = 'flex';
+
+                const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
+                const q = query(wargaCollectionRef); 
+
+                unsubscribeWarga = onSnapshot(q, (snapshot) => {
+                    allWargaDocs = snapshot.docs.sort((a,b) => {
+                        const timeA = a.data().createdAt?.toMillis() || 0;
+                        const timeB = b.data().createdAt?.toMillis() || 0;
+                        return timeB - timeA; // Sort descending
+                    });
+                    currentWargaPage = 1;
+                    displayWargaPage();
+                }, (error) => {
+                     console.error("Error fetching data:", error);
+                     showStatus("Gagal memuat data Posyandu: " + error.message, true);
+                });
+            }
+
+            const closeWargaModal = () => {
+                if (typeof unsubscribeWarga === 'function') {
+                    unsubscribeWarga();
+                }
+                wargaModal.style.display = 'none';
+            }
+
+            const resetWargaForm = () => {
+                wargaForm.reset();
+                wargaDocIdInput.value = '';
+                saveWargaBtn.querySelector('.btn-text').textContent = 'Simpan';
+                cancelWargaEditBtn.classList.add('hidden');
+                Array.from(wargaForm.elements).forEach(el => el.classList.remove('is-invalid'));
+                handleStatusChange(); 
+            }
+
+            // --- Map Modal Logic ---
+            const openMapModal = (coordStr, posyanduName) => {
+                mapModalTitle.textContent = `Peta Lokasi - ${posyanduName}`;
+                distanceInfo.textContent = 'Mencari lokasi Anda...';
+                mapModal.style.display = 'flex';
+
+                const parts = coordStr.split(',').map(s => parseFloat(s.trim()));
+                if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+                    showStatus('Format koordinat tidak valid.', true);
+                    closeMapModal();
+                    return;
+                }
+                const posyanduLatLng = L.latLng(parts[0], parts[1]);
+
+                if (map) {
+                    map.remove();
+                }
+
+                const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                });
+
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                });
+
+                map = L.map('map', {
+                    center: posyanduLatLng,
+                    zoom: 15,
+                    layers: [osmLayer], // Default layer
+                    fullscreenControl: true,
+                });
+
+                const baseLayers = {
+                    "Peta Jalan": osmLayer,
+                    "Satelit": satelliteLayer
+                };
+
+                L.control.layers(baseLayers).addTo(map);
+                
+                const RefreshControl = L.Control.extend({
+                    onAdd: function(map) {
+                        const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom bg-white p-2 rounded-md shadow-md hover:bg-gray-100');
+                        btn.innerHTML = `<svg class="w-5 h-5 text-gray-600 spinner-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.691V5.006h-4.992v.001M7.965 4.356v4.992m0 0h4.992M7.965 9.348l-3.181-3.182a8.25 8.25 0 0111.667 0l3.181 3.182"></path></svg>`;
+                        btn.title = "Refresh GPS";
+
+                        L.DomEvent.on(btn, 'click', L.DomEvent.stopPropagation)
+                                  .on(btn, 'click', L.DomEvent.preventDefault)
+                                  .on(btn, 'click', () => {
+                                      const icon = btn.querySelector('svg');
+                                      icon.classList.add('spinning');
+                                      btn.style.pointerEvents = 'none';
+
+                                      navigator.geolocation.getCurrentPosition(
+                                          (position) => {
+                                              updateUserLocationOnMap(position, posyanduLatLng);
+                                              icon.classList.remove('spinning');
+                                              btn.style.pointerEvents = 'auto';
+                                              showStatus("Lokasi GPS berhasil diperbarui.");
+                                          },
+                                          (error) => {
+                                              handleLocationError(error);
+                                              icon.classList.remove('spinning');
+                                              btn.style.pointerEvents = 'auto';
+                                          },
+                                          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                                      );
+                                  });
+                        return btn;
+                    }
+                });
+                new RefreshControl({ position: 'bottomright' }).addTo(map);
+
+
+                posyanduMarker = L.marker(posyanduLatLng).addTo(map).bindPopup(`<b>${posyanduName}</b>`).openPopup();
+
+                if (!navigator.geolocation) {
+                    showStatus('Geolocation tidak didukung oleh browser Anda.', true);
+                    distanceInfo.textContent = 'Geolocation tidak didukung.';
+                    return;
+                }
+
+                locationWatcherId = navigator.geolocation.watchPosition(
+                    (position) => updateUserLocationOnMap(position, posyanduLatLng),
+                    handleLocationError,
+                    { enableHighAccuracy: true }
+                );
+            }
+            
+            const updateUserLocationOnMap = (position, posyanduLatLng) => {
+                const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+                const distance = userLatLng.distanceTo(posyanduLatLng);
+                const isTooFar = distance > 6000;
+
+                if (!userMarker) {
+                    userMarker = L.circleMarker(userLatLng, {
+                        radius: 8,
+                        fillColor: "#1e90ff",
+                        color: "#fff",
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    }).addTo(map).bindPopup('<b>Lokasi Anda</b>');
+                } else {
+                    userMarker.setLatLng(userLatLng);
+                }
+
+                const radiusCircleOptions = {
+                    radius: 6000,
+                    weight: 2,
+                    fillOpacity: 0.1,
+                    color: isTooFar ? 'red' : 'blue',
+                    fillColor: isTooFar ? '#f03' : '#30f'
+                };
+
+                if (!userRadiusCircle) {
+                    userRadiusCircle = L.circle(userLatLng, radiusCircleOptions).addTo(map);
+                } else {
+                    userRadiusCircle.setLatLng(userLatLng).setStyle(radiusCircleOptions);
+                }
+
+                const circleElement = userRadiusCircle.getElement();
+                if (circleElement) {
+                    circleElement.classList.toggle('pulse-red-circle', isTooFar);
+                }
+
+                if (routeLine) {
+                    map.removeLayer(routeLine);
+                }
+                routeLine = L.polyline([posyanduLatLng, userLatLng], {color: 'green'}).addTo(map);
+                
+                if (!map.getBounds().contains(userLatLng)) {
+                    map.panTo(userLatLng);
+                }
+
+                distanceInfo.textContent = `Jarak ke Posyandu: ${distance.toFixed(0)} meter.`;
+            }
+
+
+            const handleLocationError = (error) => {
+                let userMessage = 'Gagal mengakses lokasi Anda.';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        userMessage = "Anda perlu memberikan izin lokasi agar fitur ini berfungsi.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        userMessage = "Informasi lokasi tidak tersedia saat ini.";
+                        break;
+                    case error.TIMEOUT:
+                        userMessage = "Waktu permintaan lokasi habis. Coba lagi.";
+                        break;
+                }
+                showStatus(userMessage, true);
+                distanceInfo.textContent = userMessage;
+            }
+
+            const closeMapModal = () => {
+                if (locationWatcherId) {
+                    navigator.geolocation.clearWatch(locationWatcherId);
+                }
+                if (map) {
+                    map.remove();
+                    map = null;
+                    userMarker = null;
+                    routeLine = null;
+                    userRadiusCircle = null; 
+                }
+                mapModal.style.display = 'none';
+            }
+            
+            // --- Event Listeners ---
+            previewBody.addEventListener('click', async (e) => {
+                const target = e.target;
+                const row = target.closest('tr');
+                if (!row) return;
+
+                const docId = row.dataset.id;
+                const saveBtn = target.closest('.save-btn');
+
+                if (target.closest('.edit-btn')) {
+                    const originalData = JSON.parse(row.dataset.originalData || '{}');
+                    row.innerHTML = generateEditRowHTML(originalData, false);
+                } else if (target.closest('.delete-btn')) {
+                    iziToast.question({
+                        timeout: 20000, close: false, overlay: true, displayMode: 'once', id: 'question',
+                        zindex: 1001, title: 'Konfirmasi', message: 'Anda yakin ingin menghapus baris ini?', position: 'center',
+                        buttons: [
+                            ['<button><b>YA</b></button>', async function (instance, toast) {
+                                instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                                try {
+                                    await deleteDoc(doc(db, collectionRef.path, docId));
+                                    showStatus("Data berhasil dihapus.", false);
+                                } catch(error) {
+                                    console.error("Error deleting document: ", error);
+                                    showStatus("Gagal menghapus data.", true);
+                                }
+                            }, true],
+                            ['<button>TIDAK</button>', function (instance, toast) {
+                                instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            }],
+                        ]
+                    });
+                } else if (target.closest('.cancel-btn')) {
+                    if (row.dataset.isNew) {
+                        row.remove();
+                    } else {
+                        const originalData = JSON.parse(row.dataset.originalData);
+                        row.innerHTML = generateRowHTML(originalData, docId);
+                    }
+                } else if (target.closest('.nama-posyandu-cell')) {
+                    openWargaModal(target.closest('.nama-posyandu-cell').dataset.id, target.closest('.nama-posyandu-cell').dataset.name);
+                } else if (target.closest('.coord-cell')) {
+                    openMapModal(target.closest('.coord-cell').dataset.coord, target.closest('.coord-cell').dataset.name);
+                } else if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Menyimpan...';
+
+                    const isNew = row.dataset.isNew === 'true';
+                    const originalData = isNew ? {} : JSON.parse(row.dataset.originalData);
+
+                    const dataPayload = {
+                        kelurahan: row.querySelector('.kelurahan-edit-input').value,
+                        bulan: isNew ? (tomSelectBulan.getValue() || bulanList[new Date().getMonth()]) : originalData.bulan,
+                        tahun: isNew ? (Number(filterTahunInput.value) || new Date().getFullYear()) : originalData.tahun,
+                    };
+                    
+                    dataKeys.forEach(key => {
+                        const input = row.querySelector(`[data-key="${key}"]`);
+                        if (input) {
+                            dataPayload[key] = input.type === 'number' ? Number(input.value) : input.value;
+                        }
+                    });
+
+                    if (isNew) {
+                        dataPayload.bumil = 0;
+                        dataPayload.busui_0_5 = 0;
+                        dataPayload.balita_6_59 = 0;
+                        dataPayload.busui_0_12 = 0;
+                        dataPayload.balita_13_59 = 0;
+                    }
+                    
+                    const namaPosyanduInput = row.querySelector('[data-key="nama_posyandu"]');
+                    namaPosyanduInput.classList.remove('is-invalid');
+                    if (!dataPayload.nama_posyandu) {
+                        showStatus('Nama Posyandu tidak boleh kosong.', true);
+                        namaPosyanduInput.classList.add('is-invalid');
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = isNew ? 'Tambah' : 'Simpan';
+                        return;
+                    }
+                    
+                    try {
+                        if (isNew) {
+                            await addDoc(collectionRef, dataPayload);
+                        } else {
+                            const finalPayload = { ...dataPayload };
+                            delete finalPayload.bumil;
+                            delete finalPayload.busui_0_5;
+                            delete finalPayload.balita_6_59;
+                            delete finalPayload.busui_0_12;
+                            delete finalPayload.balita_13_59;
+                            await updateDoc(doc(db, collectionRef.path, docId), finalPayload);
+                        }
+                        showStatus(isNew ? "Data baru berhasil ditambahkan." : "Data berhasil diperbarui.", false);
+                    } catch (error) {
+                        console.error("Error saving data: ", error);
+                        showStatus("Gagal menyimpan data: " + error.message, true);
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = isNew ? 'Tambah' : 'Simpan';
+                    }
+                }
+            });
+
+            addRowBtn.addEventListener('click', () => {
+                if (!tomSelectDesa || !tomSelectDesa.getValue()) {
+                    showStatus('Silakan pilih Desa/Kelurahan di filter terlebih dahulu.', true);
+                    return;
+                }
+                const newRow = previewBody.insertRow(0);
+                newRow.dataset.isNew = 'true';
+                const prefilledData = { kelurahan: tomSelectDesa.getValue() };
+                newRow.innerHTML = generateEditRowHTML(prefilledData, true);
+            });
+            
+            previewBody.addEventListener('input', e => {
+                if(e.target.matches('.is-invalid')) {
+                    e.target.classList.remove('is-invalid');
+                }
+            });
+            
+            filterTahunInput.addEventListener('input', fetchAndRenderData);
+            resetFilterBtn.addEventListener('click', () => {
+                tomSelectDesa.clear();
+                tomSelectBulan.setValue(bulanList[new Date().getMonth()], true); 
+                filterTahunInput.value = new Date().getFullYear();
+                fetchAndRenderData();
+            });
+
+            // Modal event listeners
+            closeWargaModalBtn.addEventListener('click', closeWargaModal);
+            cancelWargaEditBtn.addEventListener('click', resetWargaForm);
+            statusWargaSelect.addEventListener('change', handleStatusChange);
+            wargaModal.addEventListener('click', (e) => {
+                if (e.target === wargaModal) {
+                    closeWargaModal();
+                }
+            });
+
+            // Map Modal Listeners
+            closeMapModalBtn.addEventListener('click', closeMapModal);
+            mapModal.addEventListener('click', (e) => {
+                if (e.target === mapModal) {
+                    closeMapModal();
+                }
+            });
+
+            wargaForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const posyanduId = posyanduDocIdInput.value;
+                const wargaId = wargaDocIdInput.value;
+                let isValid = true;
+
+                const btnText = saveWargaBtn.querySelector('.btn-text');
+                const spinner = saveWargaBtn.querySelector('.spinner');
+
+                if (!posyanduId) {
+                    showStatus('ID Posyandu tidak ditemukan.', true);
+                    return;
+                }
+
+                const requiredFields = [
+                    document.getElementById('nama-kk'), 
+                    document.getElementById('nama-ibu'),
+                    document.getElementById('status-warga')
+                ];
+                requiredFields.forEach(field => {
+                    field.classList.remove('is-invalid');
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        isValid = false;
+                    }
+                });
+
+                if (!isValid) {
+                    showStatus('Harap isi semua kolom yang wajib diisi.', true);
+                    return;
+                }
+
+                saveWargaBtn.disabled = true;
+                btnText.classList.add('hidden');
+                spinner.classList.remove('hidden');
+
+                const wargaData = {
+                    nama_kk: document.getElementById('nama-kk').value,
+                    nama_ibu: document.getElementById('nama-ibu').value,
+                    nama_anak: document.getElementById('nama-anak').value,
+                    tgl_lahir_anak: document.getElementById('tgl-lahir-anak').value,
+                    status: document.getElementById('status-warga').value,
+                    updatedAt: serverTimestamp()
+                };
+
+                try {
+                    const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
+                    if (wargaId) {
+                        const wargaDocRef = doc(wargaCollectionRef, wargaId);
+                        await updateDoc(wargaDocRef, wargaData);
+                        showStatus('Data Posyandu berhasil diperbarui.', false);
+                    } else { 
+                        wargaData.createdAt = serverTimestamp();
+                        await addDoc(wargaCollectionRef, wargaData);
+                        showStatus('Data Posyandu berhasil disimpan.', false);
+                    }
+                    resetWargaForm();
+                    await updatePosyanduCounts(posyanduId);
+                } catch (error) {
+                    console.error("Error saving data: ", error);
+                    showStatus('Gagal menyimpan data Posyandu: ' + error.message, true);
+                } finally {
+                    saveWargaBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                }
+            });
+
+            wargaTableBody.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const wargaId = target.dataset.id;
+                const row = target.closest('tr');
+                const originalData = JSON.parse(row.dataset.originalData);
+
+                if (target.classList.contains('edit-warga-btn')) {
+                    document.getElementById('status-warga').value = originalData.status || '';
+                    document.getElementById('nama-kk').value = originalData.nama_kk || '';
+                    document.getElementById('nama-ibu').value = originalData.nama_ibu || '';
+                    document.getElementById('nama-anak').value = originalData.nama_anak || '';
+                    document.getElementById('tgl-lahir-anak').value = originalData.tgl_lahir_anak || '';
+                    wargaDocIdInput.value = wargaId;
+                    saveWargaBtn.querySelector('.btn-text').textContent = 'Update';
+                    cancelWargaEditBtn.classList.remove('hidden');
+                    handleStatusChange();
+                }
+
+                if (target.classList.contains('delete-warga-btn')) {
+                    const posyanduId = posyanduDocIdInput.value;
+                    iziToast.question({
+                        timeout: 20000, close: false, overlay: true, displayMode: 'once', id: 'questionWarga',
+                        zindex: 1002, title: 'Konfirmasi', message: 'Hapus data ini?', position: 'center',
+                        buttons: [
+                            ['<button><b>YA</b></button>', async function (instance, toast) {
+                                instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                                try {
+                                    const wargaDocRef = doc(db, collectionRef.path, posyanduId, 'warga', wargaId);
+                                    await deleteDoc(wargaDocRef);
+                                    await updatePosyanduCounts(posyanduId);
+                                    showStatus("Data berhasil dihapus.", false);
+                                } catch(error) {
+                                    console.error("Error deleting data: ", error);
+                                    showStatus("Gagal menghapus data.", true);
+                                }
+                            }, true],
+                            ['<button>TIDAK</button>', function (instance, toast) {
+                                instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            }],
+                        ]
+                    });
+                }
+            });
+            
+            // --- Export & Share Listeners ---
+            updateAppBtn.addEventListener('click', async () => {
+                const btnIcon = updateAppBtn.querySelector('.btn-icon');
+                const spinner = updateAppBtn.querySelector('.spinner');
+
+                updateAppBtn.disabled = true;
+                if (btnIcon) btnIcon.classList.add('hidden');
+                if (spinner) spinner.classList.remove('hidden');
+
+                showStatus('Membersihkan cache dan memuat ulang aplikasi...');
+
+                try {
+                    if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map(key => caches.delete(key)));
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 1500);
+
+                } catch (error) {
+                    console.error('Gagal membersihkan cache:', error);
+                    showStatus('Gagal membersihkan cache. Memuat ulang secara normal.', true);
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 1500);
+                }
+            });
+
+            downloadTemplateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const headers = ['nama_kk', 'nama_ibu', 'nama_anak', 'tgl_lahir_anak', 'status'];
+                const sampleData = [
+                    {
+                        nama_kk: 'Budi Santoso',
+                        nama_ibu: 'Siti Aminah',
+                        nama_anak: 'Citra Kirana',
+                        tgl_lahir_anak: '2023-05-20',
+                        status: 'BALITA'
+                    },
+                    {
+                        nama_kk: 'Agus Wijoyo',
+                        nama_ibu: 'Dewi Lestari',
+                        nama_anak: '',
+                        tgl_lahir_anak: '',
+                        status: 'BUMIL'
+                    }
+                ];
+                const ws = XLSX.utils.json_to_sheet(sampleData, { header: headers });
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Contoh Data Posyandu");
+                XLSX.writeFile(wb, "template_data_posyandu.xlsx");
+            });
+
+            importExcelBtn.addEventListener('click', () => excelFileInput.click());
+
+            excelFileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const posyanduId = posyanduDocIdInput.value;
+                if (!posyanduId) {
+                    showStatus('Tidak dapat mengimpor, ID Posyandu tidak ditemukan.', true);
+                    return;
+                }
+
+                showStatus('Mengimpor data dari Excel...', false);
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet);
+
+                        if (json.length === 0) {
+                            showStatus('File Excel kosong atau format tidak didukung.', true);
+                            return;
+                        }
+
+                        const requiredHeaders = ['nama_kk', 'nama_ibu', 'status'];
+                        const fileHeaders = Object.keys(json[0]);
+                        const hasRequiredHeaders = requiredHeaders.every(h => fileHeaders.includes(h));
+
+                        if (!hasRequiredHeaders) {
+                            showStatus(`File Excel harus memiliki kolom: ${requiredHeaders.join(', ')}`, true);
+                            return;
+                        }
+
+                        const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
+                        
+                        let successCount = 0;
+                        let errorCount = 0;
+
+                        for (const row of json) {
+                            if (!row.nama_kk || !row.nama_ibu || !row.status) {
+                                errorCount++;
+                                continue;
+                            }
+                            
+                            const validStatuses = ["BUMIL", "BALITA"];
+                            if (!validStatuses.includes(String(row.status).trim().toUpperCase())) {
+                                 errorCount++;
+                                 continue;
+                            }
+
+                            let tglLahir = '';
+                            if (row.tgl_lahir_anak) {
+                                if (typeof row.tgl_lahir_anak === 'number') {
+                                    tglLahir = new Date((row.tgl_lahir_anak - 25569) * 86400 * 1000).toISOString().split('T')[0];
+                                } else if (typeof row.tgl_lahir_anak === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.tgl_lahir_anak)) {
+                                    tglLahir = row.tgl_lahir_anak;
+                                }
+                            }
+
+                            const newWargaData = {
+                                nama_kk: row.nama_kk,
+                                nama_ibu: row.nama_ibu,
+                                nama_anak: row.nama_anak || '',
+                                tgl_lahir_anak: tglLahir,
+                                status: String(row.status).trim().toUpperCase(),
+                                createdAt: serverTimestamp(),
+                                updatedAt: serverTimestamp()
+                            };
+
+                            await addDoc(wargaCollectionRef, newWargaData);
+                            successCount++;
+                        }
+
+                        await updatePosyanduCounts(posyanduId);
+
+                        let resultMessage = `${successCount} data berhasil diimpor.`;
+                        if (errorCount > 0) {
+                            resultMessage += ` ${errorCount} data gagal karena format atau data tidak valid.`;
+                        }
+                        showStatus(resultMessage, errorCount > 0);
+
+                    } catch (error) {
+                        console.error("Error importing Excel file:", error);
+                        showStatus('Gagal memproses file Excel. Pastikan formatnya benar.', true);
+                    } finally {
+                        event.target.value = '';
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+
+
+            exportPosyanduDataPdfBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const { headers, rows, posyanduName } = getWargaTableData();
+                if (rows.length === 0) { 
+                    showStatus('Tidak ada data Posyandu untuk diekspor!', true); 
+                    return; 
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape' });
+                doc.autoTable({ 
+                    head: [headers], 
+                    body: rows, 
+                    styles: { fontSize: 8, cellPadding: 2 } 
+                });
+                doc.save(`Laporan_Data_Posyandu_${posyanduName.replace(/\s/g, '_')}.pdf`);
+            });
+
+            savePosyanduDataExcelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const { headers, rows, posyanduName } = getWargaTableData();
+                if (rows.length === 0) { 
+                    showStatus('Tidak ada data Posyandu untuk disimpan!', true); 
+                    return; 
+                }
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+                ws['!cols'] = Array(headers.length).fill({ wch: 20 });
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Data Posyandu");
+                XLSX.writeFile(wb, `Data_Posyandu_${posyanduName.replace(/\s/g, '_')}.xlsx`);
+            });
+
+            document.getElementById('export-excel-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                const { headers, rows } = getAllFilteredTableData();
+                if (rows.length === 0) { showStatus('Tidak ada data untuk diekspor!', true); return; }
+                const selectedDesa = tomSelectDesa.getValue() || "Semua Desa";
+                const fileName = `Laporan_Posyandu_${selectedDesa.replace(/\s/g, '_')}.xlsx`;
+
+                const title = "EDIP";
+                const provinsi = filterProvinsiSelect.options[0].text;
+                const kabupaten = filterKabupatenSelect.options[0].text;
+                const kecamatan = filterKecamatanSelect.options[0].text;
+                
+                const headerInfo = [
+                    [title],
+                    [],
+                    ["Provinsi", provinsi],
+                    ["Kabupaten/Kota", kabupaten],
+                    ["Kecamatan", kecamatan],
+                    ["Desa/Kelurahan", selectedDesa],
+                    []
+                ];
+
+                const finalData = headerInfo.concat([headers, ...rows]);
+                const ws = XLSX.utils.aoa_to_sheet(finalData);
+                
+                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }]; 
+                
+                const colWidths = headers.map(() => ({ wch: 20 }));
+                ws['!cols'] = colWidths;
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Data Laporan Posyandu");
+                XLSX.writeFile(wb, fileName);
+            });
+
+            document.getElementById('export-pdf-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                const { headers, rows } = getAllFilteredTableData();
+                if (rows.length === 0) { showStatus('Tidak ada data untuk diekspor!', true); return; }
+                
+                const selectedDesa = tomSelectDesa.getValue() || "Semua Desa";
+                const fileName = `Laporan_Posyandu_${selectedDesa.replace(/\s/g, '_')}.pdf`;
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape' });
+
+                let yPos = 15;
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text("EDIP", doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+                yPos += 10;
+                
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Provinsi: ${filterProvinsiSelect.options[0].text}`, 14, yPos);
+                yPos += 5;
+                doc.text(`Kabupaten/Kota: ${filterKabupatenSelect.options[0].text}`, 14, yPos);
+                yPos += 5;
+                doc.text(`Kecamatan: ${filterKecamatanSelect.options[0].text}`, 14, yPos);
+                yPos += 5;
+                doc.text(`Desa/Kelurahan: ${selectedDesa}`, 14, yPos);
+                yPos += 10;
+
+                doc.autoTable({ 
+                    head: [headers], 
+                    body: rows, 
+                    startY: yPos,
+                    styles: { fontSize: 6, cellPadding: 2 } 
+                });
+                doc.save(fileName);
+            });
+
+            document.getElementById('export-word-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                const { headers, rows } = getAllFilteredTableData();
+                if (rows.length === 0) { showStatus('Tidak ada data untuk diekspor!', true); return; }
+                
+                const selectedDesa = tomSelectDesa.getValue() || "Semua Desa";
+                const fileName = `Laporan_Posyandu_${selectedDesa.replace(/\s/g, '_')}.doc`;
+                
+                const headerHtml = `
+                    <div style="text-align: center;"><h1>EDIP</h1></div>
+                    <p><b>Provinsi:</b> ${filterProvinsiSelect.options[0].text}</p>
+                    <p><b>Kabupaten/Kota:</b> ${filterKabupatenSelect.options[0].text}</p>
+                    <p><b>Kecamatan:</b> ${filterKecamatanSelect.options[0].text}</p>
+                    <p><b>Desa/Kelurahan:</b> ${selectedDesa}</p>
+                    <br/>
+                `;
+
+                let tableHtml = '<table style="border:1px solid #000; border-collapse: collapse; width:100%; font-size: 10pt; font-family: Arial, sans-serif;">';
+                tableHtml += '<thead><tr>' + headers.map(h => `<th style="border:1px solid #000; padding: 5px; background-color: #f2f2f2;">${h}</th>`).join('') + '</tr></thead>';
+                tableHtml += '<tbody>' + rows.map(row => '<tr>' + row.map(cell => `<td style="border:1px solid #000; padding: 5px;">${cell}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+                
+                const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export</title></head><body>${headerHtml}${tableHtml}</body></html>`;
+                const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            document.getElementById('share-btn').addEventListener('click', async (e) => {
+                e.preventDefault();
+                const { headers, rows } = getAllFilteredTableData();
+                if (rows.length === 0) { showStatus('Tidak ada untuk dibagikan!', true); return; }
+                if (!navigator.share) { showStatus('Fitur bagikan tidak didukung di browser ini.', true); return; }
+                const selectedDesa = tomSelectDesa.getValue() || "Semua Desa";
+                const fileName = `laporan_posyandu_${selectedDesa.replace(/\s/g, '_')}.csv`;
+                let csvContent = headers.join(',') + '\n' + rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+                const file = new File([csvContent], fileName, { type: 'text/csv' });
+                try {
+                    await navigator.share({ files: [file], title: `Data Laporan Posyandu - ${selectedDesa || 'Semua Desa'}`, text: 'Berikut adalah data laporan Posyandu dari Kecamatan Ciemas.' });
+                } catch (error) {
+                    if (error.name !== 'AbortError') { showStatus('Gagal membagikan file: ' + error.message, true); }
+                }
+            });
+
+            function createRipple(event) {
+                const button = event.currentTarget;
+                const circle = document.createElement("span");
+                const diameter = Math.max(button.clientWidth, button.clientHeight);
+                circle.style.width = circle.style.height = `${diameter}px`;
+                circle.style.left = `${event.clientX - button.getBoundingClientRect().left - (diameter / 2)}px`;
+                circle.style.top = `${event.clientY - button.getBoundingClientRect().top - (diameter / 2)}px`;
+                circle.classList.add("ripple");
+                const ripple = button.getElementsByClassName("ripple")[0];
+                if (ripple) { ripple.remove(); }
+                button.appendChild(circle);
+            }
+
+            // --- Voice Search and Pengukuran Logic ---
+            const setupSpeechRecognition = () => {
+                window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!window.SpeechRecognition) {
+                    voiceSearchBtn.style.display = 'none'; // Hide button if not supported
+                    return;
+                }
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'id-ID';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = () => {
+                    voiceStatus.textContent = 'Mendengarkan...';
+                    startRecognitionBtn.classList.add('listening');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    voiceResult.textContent = `Anda mengatakan: "${transcript}"`;
+                    searchWargaByVoice(transcript);
+                };
+
+                recognition.onerror = (event) => {
+                    voiceStatus.textContent = 'Error: ' + event.error;
+                    if (event.error === 'no-speech') {
+                        voiceStatus.textContent = 'Tidak ada suara terdeteksi. Silakan coba lagi.';
+                    }
+                };
+
+                recognition.onend = () => {
+                    voiceStatus.textContent = 'Tekan ikon dan katakan nama yang ingin dicari...';
+                    startRecognitionBtn.classList.remove('listening');
+                };
+            }
+
+            async function searchWargaByVoice(name) {
+                const selectedKelurahan = tomSelectDesa.getValue();
+                if (!selectedKelurahan) {
+                    showStatus('Pilih desa terlebih dahulu untuk melakukan pencarian.', true);
                     return;
                 }
                 
-                try {
-                    if (isNew) {
-                        await addDoc(collectionRef, dataPayload);
-                    } else {
-                        // When updating, we don't overwrite the calculated counts.
-                        // They will be recalculated by the logic triggered from the modal.
-                        const finalPayload = { ...dataPayload };
-                        delete finalPayload.bumil;
-                        delete finalPayload.busui_0_5;
-                        delete finalPayload.balita_6_59;
-                        await updateDoc(doc(db, collectionRef.path, docId), finalPayload);
-                    }
-                    showStatus(isNew ? "Data baru berhasil ditambahkan." : "Data berhasil diperbarui.", false);
-                } catch (error) {
-                    console.error("Error saving data: ", error);
-                    showStatus("Gagal menyimpan data: " + error.message, true);
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = isNew ? 'Tambah' : 'Simpan';
-                }
-            }
-        });
-
-        addRowBtn.addEventListener('click', () => {
-            if (!tomSelectDesa || !tomSelectDesa.getValue()) {
-                showStatus('Silakan pilih Desa/Kelurahan di filter terlebih dahulu.', true);
-                return;
-            }
-            const newRow = previewBody.insertRow(0);
-            newRow.dataset.isNew = 'true';
-            const prefilledData = { kelurahan: tomSelectDesa.getValue() };
-            newRow.innerHTML = generateEditRowHTML(prefilledData, true);
-        });
-        
-        previewBody.addEventListener('input', e => {
-            if(e.target.matches('.is-invalid')) {
-                e.target.classList.remove('is-invalid');
-            }
-        });
-        
-        filterTahunInput.addEventListener('input', fetchAndRenderData);
-        resetFilterBtn.addEventListener('click', () => {
-            tomSelectDesa.clear();
-            tomSelectBulan.setValue(bulanList[new Date().getMonth()], true); 
-            filterTahunInput.value = new Date().getFullYear();
-            fetchAndRenderData();
-        });
-
-        // Modal event listeners
-        closeWargaModalBtn.addEventListener('click', closeWargaModal);
-        cancelWargaEditBtn.addEventListener('click', resetWargaForm);
-        statusWargaSelect.addEventListener('change', handleStatusChange);
-        wargaModal.addEventListener('click', (e) => {
-            if (e.target === wargaModal) {
-                closeWargaModal();
-            }
-        });
-
-        // Map Modal Listeners
-        closeMapModalBtn.addEventListener('click', closeMapModal);
-        mapModal.addEventListener('click', (e) => {
-            if (e.target === mapModal) {
-                closeMapModal();
-            }
-        });
-
-        wargaForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const posyanduId = posyanduDocIdInput.value;
-            const wargaId = wargaDocIdInput.value;
-            let isValid = true;
-
-            const btnText = saveWargaBtn.querySelector('.btn-text');
-            const spinner = saveWargaBtn.querySelector('.spinner');
-
-            if (!posyanduId) {
-                showStatus('ID Posyandu tidak ditemukan.', true);
-                return;
-            }
-
-            // Validate form
-            const requiredFields = [
-                document.getElementById('nama-kk'), 
-                document.getElementById('nama-ibu'),
-                document.getElementById('status-warga')
-            ];
-            requiredFields.forEach(field => {
-                field.classList.remove('is-invalid');
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    isValid = false;
-                }
-            });
-
-            if (!isValid) {
-                showStatus('Harap isi semua kolom yang wajib diisi.', true);
-                return;
-            }
-
-            saveWargaBtn.disabled = true;
-            btnText.classList.add('hidden');
-            spinner.classList.remove('hidden');
-
-            const wargaData = {
-                nama_kk: document.getElementById('nama-kk').value,
-                nama_ibu: document.getElementById('nama-ibu').value,
-                nama_anak: document.getElementById('nama-anak').value,
-                tgl_lahir_anak: document.getElementById('tgl-lahir-anak').value,
-                status: document.getElementById('status-warga').value,
-                updatedAt: serverTimestamp()
-            };
-
-            try {
-                const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
-                if (wargaId) { // Update existing MBG
-                    const wargaDocRef = doc(wargaCollectionRef, wargaId);
-                    await updateDoc(wargaDocRef, wargaData);
-                    showStatus('Data MBG berhasil diperbarui.', false);
-                } else { // Add new MBG
-                    wargaData.createdAt = serverTimestamp();
-                    await addDoc(wargaCollectionRef, wargaData);
-                    showStatus('Data MBG berhasil disimpan.', false);
-                }
-                resetWargaForm();
-                await updatePosyanduCounts(posyanduId); // Recalculate counts
-            } catch (error) {
-                console.error("Error saving MBG data: ", error);
-                showStatus('Gagal menyimpan data MBG: ' + error.message, true);
-            } finally {
-                saveWargaBtn.disabled = false;
-                btnText.classList.remove('hidden');
-                spinner.classList.add('hidden');
-            }
-        });
-
-        wargaTableBody.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-
-            const wargaId = target.dataset.id;
-            const row = target.closest('tr');
-            const originalData = JSON.parse(row.dataset.originalData);
-
-            if (target.classList.contains('edit-warga-btn')) {
-                document.getElementById('status-warga').value = originalData.status || '';
-                document.getElementById('nama-kk').value = originalData.nama_kk || '';
-                document.getElementById('nama-ibu').value = originalData.nama_ibu || '';
-                document.getElementById('nama-anak').value = originalData.nama_anak || '';
-                document.getElementById('tgl-lahir-anak').value = originalData.tgl_lahir_anak || '';
-                wargaDocIdInput.value = wargaId;
-                saveWargaBtn.querySelector('.btn-text').textContent = 'Update';
-                cancelWargaEditBtn.classList.remove('hidden');
-                handleStatusChange(); // Update disabled state on edit
-            }
-
-            if (target.classList.contains('delete-warga-btn')) {
-                const posyanduId = posyanduDocIdInput.value;
-                iziToast.question({
-                    timeout: 20000, close: false, overlay: true, displayMode: 'once', id: 'questionWarga',
-                    zindex: 1002, title: 'Konfirmasi', message: 'Hapus data MBG ini?', position: 'center',
-                    buttons: [
-                        ['<button><b>YA</b></button>', async function (instance, toast) {
-                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                            try {
-                                const wargaDocRef = doc(db, collectionRef.path, posyanduId, 'warga', wargaId);
-                                await deleteDoc(wargaDocRef);
-                                await updatePosyanduCounts(posyanduId); // Recalculate counts
-                                showStatus("Data MBG berhasil dihapus.", false);
-                            } catch(error) {
-                                console.error("Error deleting MBG data: ", error);
-                                showStatus("Gagal menghapus data MBG.", true);
-                            }
-                        }, true],
-                        ['<button>TIDAK</button>', function (instance, toast) {
-                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                        }],
-                    ]
-                });
-            }
-        });
-        
-        // --- Export & Share Listeners ---
-        updateAppBtn.addEventListener('click', async () => {
-            const btnIcon = updateAppBtn.querySelector('.btn-icon');
-            const spinner = updateAppBtn.querySelector('.spinner');
-
-            updateAppBtn.disabled = true;
-            if (btnIcon) btnIcon.classList.add('hidden');
-            if (spinner) spinner.classList.remove('hidden');
-
-            showStatus('Membersihkan cache dan memuat ulang aplikasi...');
-
-            try {
-                if ('caches' in window) {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(key => caches.delete(key)));
-                }
+                voiceStatus.textContent = `Mencari "${name}" di desa ${selectedKelurahan}...`;
+                voiceSearchResultsList.innerHTML = '';
+                voiceResultsTitle.classList.add('hidden');
                 
-                setTimeout(() => {
-                    window.location.reload(true);
-                }, 1500);
-
-            } catch (error) {
-                console.error('Gagal membersihkan cache:', error);
-                showStatus('Gagal membersihkan cache. Memuat ulang secara normal.', true);
-                setTimeout(() => {
-                    window.location.reload(true);
-                }, 1500);
-            }
-        });
-
-        downloadTemplateBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const headers = ['nama_kk', 'nama_ibu', 'nama_anak', 'tgl_lahir_anak', 'status'];
-            const sampleData = [
-                {
-                    nama_kk: 'Budi Santoso',
-                    nama_ibu: 'Siti Aminah',
-                    nama_anak: 'Citra Kirana',
-                    tgl_lahir_anak: '2023-05-20',
-                    status: 'BALITA'
-                },
-                {
-                    nama_kk: 'Agus Wijoyo',
-                    nama_ibu: 'Dewi Lestari',
-                    nama_anak: '',
-                    tgl_lahir_anak: '',
-                    status: 'BUMIL'
-                }
-            ];
-            const ws = XLSX.utils.json_to_sheet(sampleData, { header: headers });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Contoh Data MBG");
-            XLSX.writeFile(wb, "template_data_mbg.xlsx");
-        });
-
-        importExcelBtn.addEventListener('click', () => excelFileInput.click());
-
-        excelFileInput.addEventListener('change', async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const posyanduId = posyanduDocIdInput.value;
-            if (!posyanduId) {
-                showStatus('Tidak dapat mengimpor, ID Posyandu tidak ditemukan.', true);
-                return;
-            }
-
-            showStatus('Mengimpor data dari Excel...', false);
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet);
-
-                    if (json.length === 0) {
-                        showStatus('File Excel kosong atau format tidak didukung.', true);
+                    const qPosyandu = query(collectionRef, where("kelurahan", "==", selectedKelurahan));
+                    const posyanduSnapshot = await getDocs(qPosyandu);
+                    if (posyanduSnapshot.empty) {
+                        showStatus(`Tidak ada Posyandu di desa ${selectedKelurahan}.`, true);
                         return;
                     }
 
-                    const requiredHeaders = ['nama_kk', 'nama_ibu', 'status'];
-                    const fileHeaders = Object.keys(json[0]);
-                    const hasRequiredHeaders = requiredHeaders.every(h => fileHeaders.includes(h));
-
-                    if (!hasRequiredHeaders) {
-                        showStatus(`File Excel harus memiliki kolom: ${requiredHeaders.join(', ')}`, true);
-                        return;
-                    }
-
-                    const wargaCollectionRef = collection(db, collectionRef.path, posyanduId, 'warga');
-                    const promises = [];
-                    let successCount = 0;
-                    let errorCount = 0;
-
-                    for (const row of json) {
-                        if (!row.nama_kk || !row.nama_ibu || !row.status) {
-                            errorCount++;
-                            continue;
-                        }
+                    let foundWarga = [];
+                    const searchPromises = posyanduSnapshot.docs.map(async (posyanduDoc) => {
+                        const wargaRef = collection(db, posyanduDoc.ref.path, 'warga');
+                        const nameLower = name.toLowerCase();
                         
-                        const validStatuses = ["BUMIL", "BALITA"];
-                        if (!validStatuses.includes(String(row.status).trim())) {
-                             errorCount++;
-                             continue;
-                        }
-
-                        let tglLahir = '';
-                        if (row.tgl_lahir_anak) {
-                            if (typeof row.tgl_lahir_anak === 'number') {
-                                tglLahir = new Date((row.tgl_lahir_anak - 25569) * 86400 * 1000).toISOString().split('T')[0];
-                            } else if (typeof row.tgl_lahir_anak === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.tgl_lahir_anak)) {
-                                tglLahir = row.tgl_lahir_anak;
+                        const allWargaSnapshot = await getDocs(wargaRef);
+                        allWargaSnapshot.forEach(doc => {
+                            const data = doc.data();
+                            const match = (data.nama_kk && data.nama_kk.toLowerCase().includes(nameLower)) ||
+                                          (data.nama_ibu && data.nama_ibu.toLowerCase().includes(nameLower)) ||
+                                          (data.nama_anak && data.nama_anak.toLowerCase().includes(nameLower));
+                            if(match) {
+                                foundWarga.push({ id: doc.id, data: data, posyanduId: posyanduDoc.id });
                             }
-                        }
+                        });
+                    });
 
-                        const newWargaData = {
-                            nama_kk: row.nama_kk,
-                            nama_ibu: row.nama_ibu,
-                            nama_anak: row.nama_anak || '',
-                            tgl_lahir_anak: tglLahir,
-                            status: String(row.status).trim(),
-                            createdAt: serverTimestamp(),
-                            updatedAt: serverTimestamp()
-                        };
+                    await Promise.all(searchPromises);
 
-                        promises.push(addDoc(wargaCollectionRef, newWargaData));
-                        successCount++;
+                    voiceResultsTitle.classList.remove('hidden');
+                    if (foundWarga.length === 0) {
+                        voiceSearchResultsList.innerHTML = '<li class="p-3 text-center text-gray-500">Data tidak ditemukan.</li>';
+                    } else {
+                        foundWarga.forEach(warga => {
+                            const li = document.createElement('li');
+                            li.className = 'p-3 hover:bg-gray-100 cursor-pointer';
+                            li.textContent = `Anak: ${warga.data.nama_anak || '-'}, Ibu: ${warga.data.nama_ibu}, KK: ${warga.data.nama_kk}`;
+                            li.dataset.wargaInfo = JSON.stringify(warga);
+                            voiceSearchResultsList.appendChild(li);
+                        });
                     }
-
-                    await Promise.all(promises);
-                    await updatePosyanduCounts(posyanduId); // Recalculate counts after import
-
-                    let resultMessage = `${successCount} data berhasil diimpor.`;
-                    if (errorCount > 0) {
-                        resultMessage += ` ${errorCount} data gagal karena format atau data tidak valid.`;
-                    }
-                    showStatus(resultMessage, errorCount > 0);
 
                 } catch (error) {
-                    console.error("Error importing Excel file:", error);
-                    showStatus('Gagal memproses file Excel. Pastikan formatnya benar.', true);
-                } finally {
-                    event.target.value = '';
+                    console.error("Error during voice search: ", error);
+                    showStatus("Terjadi kesalahan saat mencari data.", true);
                 }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-
-        exportMbgPdfBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows, posyanduName } = getWargaTableData();
-            if (rows.length === 0) { 
-                showStatus('Tidak ada data MBG untuk diekspor!', true); 
-                return; 
             }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape' });
-            doc.autoTable({ 
-                head: [headers], 
-                body: rows, 
-                styles: { fontSize: 8, cellPadding: 2 } 
-            });
-            doc.save(`Laporan_MBG_${posyanduName.replace(/\s/g, '_')}.pdf`);
-        });
 
-        saveMbgExcelBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows, posyanduName } = getWargaTableData();
-            if (rows.length === 0) { 
-                showStatus('Tidak ada data MBG untuk disimpan!', true); 
-                return; 
+            const openPengukuranModal = (warga) => {
+                pengukuranForm.reset();
+                const { data, id, posyanduId } = warga;
+                document.getElementById('pengukuran-posyandu-id').value = posyanduId;
+                document.getElementById('pengukuran-warga-id').value = id;
+                document.getElementById('pengukuran-nama-kk').value = data.nama_kk || '';
+                document.getElementById('pengukuran-nama-ibu').value = data.nama_ibu || '';
+                document.getElementById('pengukuran-nama-anak').value = data.nama_anak || '';
+                pengukuranModal.style.display = 'flex';
             }
-            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-            ws['!cols'] = Array(headers.length).fill({ wch: 20 });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Data MBG");
-            XLSX.writeFile(wb, `Data_MBG_${posyanduName.replace(/\s/g, '_')}.xlsx`);
-        });
 
-        document.getElementById('export-excel-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-            if (rows.length === 0) { showStatus('Tidak ada data untuk diekspor!', true); return; }
-            const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-            ws['!cols'] = Array(headers.length).fill({ wch: 20 });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Data Laporan Posyandu");
-            XLSX.writeFile(wb, "Laporan_Posyandu_Ciemas.xlsx");
-        });
+            async function savePengukuranData(event) {
+                event.preventDefault();
+                const saveBtn = document.getElementById('save-pengukuran-btn');
+                const btnText = saveBtn.querySelector('.btn-text');
+                const spinner = saveBtn.querySelector('.spinner');
 
-        document.getElementById('export-pdf-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-            if (rows.length === 0) { showStatus('Tidak ada data untuk diekspor!', true); return; }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape' });
-            doc.autoTable({ head: [headers], body: rows, styles: { fontSize: 6, cellPadding: 2 } });
-            doc.save('Laporan_Posyandu_Ciemas.pdf');
-        });
+                saveBtn.disabled = true;
+                btnText.classList.add('hidden');
+                spinner.classList.remove('hidden');
 
-        document.getElementById('export-word-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-            if (rows.length === 0) { showStatus('Tidak ada data untuk diekspor!', true); return; }
-            let tableHtml = '<table style="border:1px solid #000; border-collapse: collapse; width:100%; font-size: 10pt; font-family: Arial, sans-serif;">';
-            tableHtml += '<thead><tr>' + headers.map(h => `<th style="border:1px solid #000; padding: 5px; background-color: #f2f2f2;">${h}</th>`).join('') + '</tr></thead>';
-            tableHtml += '<tbody>' + rows.map(row => '<tr>' + row.map(cell => `<td style="border:1px solid #000; padding: 5px;">${cell}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
-            const fullHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export</title></head><body>${fullHtml}</body></html>`;
-            const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'Laporan_Posyandu_Ciemas.doc';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
+                const posyanduId = document.getElementById('pengukuran-posyandu-id').value;
+                const wargaId = document.getElementById('pengukuran-warga-id').value;
+                
+                const dataToUpdate = {
+                    bb: Number(document.getElementById('pengukuran-bb').value),
+                    tb: Number(document.getElementById('pengukuran-tb').value),
+                    lila: Number(document.getElementById('pengukuran-lila').value) || null,
+                    pengukuran_terakhir: serverTimestamp()
+                };
 
-        document.getElementById('share-btn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            const { headers, rows } = getVisibleTableData();
-            if (rows.length === 0) { showStatus('Tidak ada untuk dibagikan!', true); return; }
-            if (!navigator.share) { showStatus('Fitur bagikan tidak didukung di browser ini.', true); return; }
-            let csvContent = headers.join(',') + '\n' + rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-            const file = new File([csvContent], 'laporan_posyandu.csv', { type: 'text/csv' });
+                try {
+                    const wargaDocRef = doc(db, collectionRef.path, posyanduId, 'warga', wargaId);
+                    await updateDoc(wargaDocRef, dataToUpdate);
+                    showStatus("Data pengukuran berhasil disimpan.", false);
+                    pengukuranModal.style.display = 'none';
+                } catch (error) {
+                    console.error("Error saving measurement data: ", error);
+                    showStatus("Gagal menyimpan data pengukuran: " + error.message, true);
+                } finally {
+                    saveBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                }
+            }
+
+            // --- App Initialization Logic ---
             try {
-                await navigator.share({ files: [file], title: 'Data Laporan Posyandu', text: 'Berikut adalah data laporan Posyandu dari Kecamatan Ciemas.' });
-            } catch (error) {
-                if (error.name !== 'AbortError') { showStatus('Gagal membagikan file: ' + error.message, true); }
-            }
-        });
-
-        function createRipple(event) {
-            const button = event.currentTarget;
-            const circle = document.createElement("span");
-            const diameter = Math.max(button.clientWidth, button.clientHeight);
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${event.clientX - button.getBoundingClientRect().left - (diameter / 2)}px`;
-            circle.style.top = `${event.clientY - button.getBoundingClientRect().top - (diameter / 2)}px`;
-            circle.classList.add("ripple");
-            const ripple = button.getElementsByClassName("ripple")[0];
-            if (ripple) { ripple.remove(); }
-            button.appendChild(circle);
-        }
-
-        // --- App Initialization ---
-        async function main() {
-            try {
-                // Initialize TomSelect first, then set up event listeners
                 tomSelectDesa = new TomSelect(filterKelurahanSelect, { 
                     options: kelurahanList.map(v => ({value: v, text: v})), 
                     create: false, 
@@ -1634,7 +2018,7 @@
                         
                         const now = new Date();
                         filterTahunInput.value = now.getFullYear();
-                        tomSelectBulan.setValue(bulanList[now.getMonth()], false); // Set initial value without triggering change
+                        tomSelectBulan.setValue(bulanList[now.getMonth()], false);
                         fetchAndRenderData();
                     } else {
                         loadingIndicator.textContent = "Silakan login untuk melihat data.";
@@ -1648,6 +2032,37 @@
                 filterProvinsiSelect.innerHTML = `<option>JAWA BARAT</option>`;
                 filterKabupatenSelect.innerHTML = `<option>KABUPATEN SUKABUMI</option>`;
                 filterKecamatanSelect.innerHTML = `<option>CIEMAS</option>`;
+
+                // Setup voice search
+                setupSpeechRecognition();
+                voiceSearchBtn.addEventListener('click', () => {
+                    const selectedKelurahan = tomSelectDesa.getValue();
+                    if (!selectedKelurahan) {
+                        showStatus('Pilih desa terlebih dahulu untuk melakukan pencarian.', true);
+                        return;
+                    }
+                    voiceSearchModal.style.display = 'flex';
+                    voiceResult.textContent = '';
+                    voiceStatus.textContent = 'Tekan ikon dan katakan nama yang ingin dicari...';
+                    voiceSearchResultsList.innerHTML = '';
+                    voiceResultsTitle.classList.add('hidden');
+                });
+                closeVoiceSearchModalBtn.addEventListener('click', () => voiceSearchModal.style.display = 'none');
+                startRecognitionBtn.addEventListener('click', () => recognition.start());
+                voiceSearchResultsList.addEventListener('click', (e) => {
+                    if (e.target && e.target.nodeName === 'LI') {
+                        const wargaInfo = JSON.parse(e.target.dataset.wargaInfo);
+                        voiceSearchModal.style.display = 'none';
+                        openPengukuranModal(wargaInfo);
+                    }
+                });
+
+
+                // Setup pengukuran modal listeners
+                pengukuranForm.addEventListener('submit', savePengukuranData);
+                closePengukuranModalBtn.addEventListener('click', () => pengukuranModal.style.display = 'none');
+                cancelPengukuranBtn.addEventListener('click', () => pengukuranModal.style.display = 'none');
+
 
             } catch(error) {
                 console.error("Initialization Error:", error);
