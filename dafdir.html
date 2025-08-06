@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Absensi Wajah</title>
+    <title>EDIP-Aplikasi Absensi Wajah</title>
     <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Import library face-api.js -->
@@ -43,6 +43,14 @@
             height: 60px;
             animation: spin 2s linear infinite;
         }
+        .loader-sm {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #4f46e5;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -53,59 +61,17 @@
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Aplikasi Absensi Wajah</h1>
-            <p class="text-gray-600 mt-2">Daftarkan wajah, ekspor data untuk backup, lalu mulai absensi.</p>
+            <p class="text-gray-600 mt-2">Mulai absensi dengan webcam. Klik tombol di kanan bawah untuk registrasi.</p>
         </header>
 
         <!-- Loading Indicator -->
         <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
             <div class="loader"></div>
-            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model AI...</p>
+            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model ...</p>
         </div>
 
-        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Kolom Kiri: Registrasi, Backup, dan Rekap -->
-            <div class="bg-white p-6 rounded-lg shadow-md flex flex-col space-y-8">
-                <div>
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">1. Registrasi & Backup</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
-                            <input type="text" id="name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div>
-                            <label for="imageUpload" class="block text-sm font-medium text-gray-700">Unggah Foto Wajah (1 orang)</label>
-                            <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                        </div>
-                        <button id="registerButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
-                            Daftarkan Wajah
-                        </button>
-                        <p id="register-status" class="text-center text-sm text-gray-500 h-4"></p>
-                    </div>
-                    <!-- Bagian Backup dan Restore Data -->
-                    <div class="mt-6 pt-6 border-t">
-                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button id="exportButton" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Ekspor Data Peserta
-                            </button>
-                            <label for="importFile" class="w-full text-center bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 cursor-pointer">
-                                Impor Data Peserta
-                            </label>
-                            <input type="file" id="importFile" class="hidden" accept=".json">
-                        </div>
-                    </div>
-                </div>
-                 <!-- Bagian Rekap -->
-                <div class="pt-6 border-t">
-                    <h2 class="text-2xl font-semibold mb-4 border-b pb-2">2. Laporan</h2>
-                     <div class="grid grid-cols-1 gap-4">
-                        <button id="exportExcelButton" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                            Ekspor Rekap (Excel)
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kolom Kanan: Absensi Real-time dan Daftar Hadir -->
+        <main class="grid grid-cols-1 gap-8">
+            <!-- Kolom Absensi dan Daftar Hadir -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Absensi Real-time</h2>
                 <div class="flex justify-center mb-4">
@@ -121,11 +87,19 @@
                 
                 <!-- Daftar Hadir -->
                 <div class="mt-8">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-4">
                         <h2 class="text-2xl font-semibold">Daftar Hadir Hari Ini</h2>
-                        <button id="exportPdfButton" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                            Rekap PDF
-                        </button>
+                        <div class="flex space-x-2">
+                            <button id="recapButton" class="bg-gray-700 text-white py-2 px-4 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                Rekap Kehadiran
+                            </button>
+                            <button id="exportPdfButton" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                Rekap PDF
+                            </button>
+                             <button id="exportExcelButton" class="bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                                Rekap Excel
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white">
@@ -148,6 +122,157 @@
         </main>
     </div>
 
+    <!-- Floating Action Button (FAB) -->
+    <button id="fab" class="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+    </button>
+
+    <!-- PIN Modal -->
+    <div id="pinModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-40">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm mx-4">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Masukkan PIN</h2>
+            <input type="password" id="pinInput" class="w-full px-4 py-2 border border-gray-300 rounded-md text-center text-lg tracking-widest" placeholder="••••••">
+            <button id="pinSubmit" class="w-full mt-6 bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 flex items-center justify-center h-10 disabled:bg-indigo-400">
+                <span id="pinSubmitText">Login</span>
+                <div id="pinLoader" class="hidden loader-sm"></div>
+            </button>
+            <button id="pinCancel" class="w-full mt-2 bg-gray-200 text-gray-700 py-2 rounded-md hover:bg-gray-300 disabled:bg-gray-300">Batal</button>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="registrationModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-2xl font-semibold text-gray-800">Registrasi & Manajemen Data</h2>
+                <button id="closeRegistrationModal" class="text-gray-500 hover:text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex flex-col space-y-8">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">1. Registrasi Peserta</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                            <input type="text" id="name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Foto Wajah</label>
+                            <div class="mt-1 flex items-center space-x-4">
+                                <label for="imageUpload" class="w-full text-center bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 cursor-pointer border border-gray-300">
+                                    Unggah File
+                                </label>
+                                <button id="takePictureButton" class="w-full bg-indigo-100 text-indigo-700 py-2 px-4 rounded-md hover:bg-indigo-200 border border-indigo-200">
+                                    Ambil Foto
+                                </button>
+                            </div>
+                            <input type="file" id="imageUpload" class="hidden" accept="image/*">
+                            <div id="imagePreviewContainer" class="mt-4 text-center hidden">
+                                <img id="imagePreview" class="max-h-40 mx-auto rounded-md shadow-sm"/>
+                                <p id="imageName" class="text-xs text-gray-500 mt-1"></p>
+                            </div>
+                        </div>
+                        <button id="registerButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
+                            Daftarkan Wajah
+                        </button>
+                        <p id="register-status" class="text-center text-sm text-gray-500 h-4"></p>
+                    </div>
+                </div>
+                <!-- Bagian Backup dan Restore Data -->
+                <div class="pt-6 border-t">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">2. Backup & Restore</h3>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button id="exportButton" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Ekspor Data Peserta
+                        </button>
+                        <label for="importFile" class="w-full text-center bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 cursor-pointer">
+                            Impor Data Peserta
+                        </label>
+                        <input type="file" id="importFile" class="hidden" accept=".json">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Capture Modal -->
+    <div id="cameraModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-4 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <video id="cameraPreview" class="w-full rounded-md" autoplay playsinline></video>
+            <canvas id="captureCanvas" class="hidden"></canvas>
+            <div class="flex space-x-4 mt-4">
+                <button id="captureBtn" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">Ambil Gambar</button>
+                <button id="cancelCaptureBtn" class="w-full bg-gray-200 text-gray-700 py-2 rounded-md hover:bg-gray-300">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recap Modal -->
+    <div id="recapModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-2xl font-semibold text-gray-800">Rekapitulasi Kehadiran</h2>
+                <button id="closeRecapModal" class="text-gray-500 hover:text-gray-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="recapLoader" class="hidden flex justify-center items-center py-10">
+                <div class="loader"></div>
+            </div>
+            <div id="recapContent">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Provinsi</label>
+                        <input type="text" value="JAWA BARAT" class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Kab/Kota</label>
+                        <input type="text" value="SUKABUMI" class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Kecamatan</label>
+                        <input type="text" value="CIEMAS" class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm" readonly>
+                    </div>
+                    <div>
+                        <label for="recapYear" class="block text-sm font-medium text-gray-700">Tahun</label>
+                        <select id="recapYear" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <option>2025</option>
+                            <option>2024</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="recapMonth" class="block text-sm font-medium text-gray-700">Bulan</label>
+                        <select id="recapMonth" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></select>
+                    </div>
+                </div>
+                <button id="showRecapButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Tampilkan Rekap</button>
+                <div id="recapResultContainer" class="mt-6 hidden">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-800">Hasil Rekap</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white border">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                    <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
+                                    <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Kehadiran</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recapResultTable" class="divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // --- DOM ELEMENT REFERENCES ---
         const video = document.getElementById('video');
@@ -165,14 +290,42 @@
         const importFile = document.getElementById('importFile');
         const exportExcelButton = document.getElementById('exportExcelButton');
         const exportPdfButton = document.getElementById('exportPdfButton');
+        const fab = document.getElementById('fab');
+        const pinModal = document.getElementById('pinModal');
+        const pinInput = document.getElementById('pinInput');
+        const pinSubmit = document.getElementById('pinSubmit');
+        const pinCancel = document.getElementById('pinCancel');
+        const registrationModal = document.getElementById('registrationModal');
+        const closeRegistrationModal = document.getElementById('closeRegistrationModal');
+        const pinSubmitText = document.getElementById('pinSubmitText');
+        const pinLoader = document.getElementById('pinLoader');
+        const takePictureButton = document.getElementById('takePictureButton');
+        const cameraModal = document.getElementById('cameraModal');
+        const cameraPreview = document.getElementById('cameraPreview');
+        const captureCanvas = document.getElementById('captureCanvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const cancelCaptureBtn = document.getElementById('cancelCaptureBtn');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const imageName = document.getElementById('imageName');
+        const recapButton = document.getElementById('recapButton');
+        const recapModal = document.getElementById('recapModal');
+        const closeRecapModal = document.getElementById('closeRecapModal');
+        const recapLoader = document.getElementById('recapLoader');
+        const recapContent = document.getElementById('recapContent');
+        const recapMonth = document.getElementById('recapMonth');
+        const recapYear = document.getElementById('recapYear');
+        const showRecapButton = document.getElementById('showRecapButton');
+        const recapResultContainer = document.getElementById('recapResultContainer');
+        const recapResultTable = document.getElementById('recapResultTable');
 
 
         // --- STATE MANAGEMENT ---
         let registeredStudents = [];
         let faceMatcher = null;
         let recognitionInterval = null;
+        let capturedImageBlob = null;
         const STUDENTS_STORAGE_KEY = 'faceAttendanceApp_students';
-        const DATE_STORAGE_KEY = 'faceAttendanceApp_lastResetDate';
         let synthVoices = [];
 
         // --- NOTIFICATION FUNCTION ---
@@ -226,51 +379,52 @@
             const savableData = registeredStudents.map(student => ({
                 name: student.name,
                 descriptor: Array.from(student.descriptor),
-                present: student.present,
-                hari: student.hari,
-                tanggal: student.tanggal,
-                jam: student.jam
+                attendanceRecords: student.attendanceRecords || []
             }));
             localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(savableData));
         }
 
         function loadAndResetData() {
-            const today = getTodayDateString();
-            const lastResetDate = localStorage.getItem(DATE_STORAGE_KEY);
             const data = localStorage.getItem(STUDENTS_STORAGE_KEY);
-
             if (data) {
                 const parsedData = JSON.parse(data);
-                const isNewDay = lastResetDate !== today;
-                if (isNewDay) console.log("Hari baru terdeteksi. Mereset status kehadiran.");
                 registeredStudents = parsedData.map(student => ({
                     name: student.name,
                     descriptor: new Float32Array(student.descriptor),
-                    present: isNewDay ? false : (student.present || false),
-                    hari: isNewDay ? '' : (student.hari || ''),
-                    tanggal: isNewDay ? '' : (student.tanggal || ''),
-                    jam: isNewDay ? '' : (student.jam || '')
+                    attendanceRecords: student.attendanceRecords || []
                 }));
-                if (isNewDay) {
-                    saveDataToLocalStorage();
-                    localStorage.setItem(DATE_STORAGE_KEY, today);
-                }
             }
         }
         
         function renderAttendanceList() {
+            const today = getTodayDateString();
             attendanceList.innerHTML = '';
             registeredStudents.forEach(student => {
                 const row = document.createElement('tr');
                 row.setAttribute('data-name', student.name);
-                let statusBadge = student.present ? `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>` : `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Belum Hadir</span>`;
-                if (student.present) row.classList.add('bg-green-50');
+
+                const todaysRecord = student.attendanceRecords.find(rec => rec.date === today);
+                
+                let statusBadge = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Belum Hadir</span>`;
+                let hari = '-';
+                let tanggal = '-';
+                let jam = '-';
+
+                if (todaysRecord) {
+                    statusBadge = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>`;
+                    row.classList.add('bg-green-50');
+                    const recordDate = new Date(todaysRecord.date + 'T' + todaysRecord.time);
+                    hari = recordDate.toLocaleDateString('id-ID', { weekday: 'long' });
+                    tanggal = recordDate.toLocaleDateString('id-ID');
+                    jam = recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                }
+
                 row.innerHTML = `
                     <td class="py-4 px-6 text-sm font-medium text-gray-900">${student.name}</td>
                     <td class="py-4 px-6 text-sm text-gray-500">${statusBadge}</td>
-                    <td class="py-4 px-6 text-sm text-gray-700">${student.hari || '-'}</td>
-                    <td class="py-4 px-6 text-sm text-gray-700">${student.tanggal || '-'}</td>
-                    <td class="py-4 px-6 text-sm text-gray-700">${student.jam || '-'}</td>
+                    <td class="py-4 px-6 text-sm text-gray-700">${hari}</td>
+                    <td class="py-4 px-6 text-sm text-gray-700">${tanggal}</td>
+                    <td class="py-4 px-6 text-sm text-gray-700">${jam}</td>
                 `;
                 attendanceList.appendChild(row);
             });
@@ -324,15 +478,17 @@
         // --- EVENT LISTENERS ---
         registerButton.addEventListener('click', async () => {
             const name = nameInput.value.trim();
-            const file = imageUpload.files[0];
-            if (!name || !file) {
-                iziToast.warning({ title: 'Input Tidak Lengkap', message: 'Nama dan file gambar harus diisi.' });
+            const imageFile = imageUpload.files[0];
+            const imageSource = capturedImageBlob || imageFile;
+
+            if (!name || !imageSource) {
+                iziToast.warning({ title: 'Input Tidak Lengkap', message: 'Nama dan foto wajah harus diisi.' });
                 return;
             }
             registerStatus.innerText = 'Memproses gambar...';
             registerButton.disabled = true;
             try {
-                const image = await faceapi.bufferToImage(file);
+                const image = await faceapi.bufferToImage(imageSource);
                 const detection = await faceapi.detectSingleFace(image, new faceapi.SsdMobilenetv1Options()).withFaceLandmarks().withFaceDescriptor();
                 if (!detection) {
                     iziToast.error({ title: 'Gagal', message: 'Wajah tidak terdeteksi di gambar.' });
@@ -344,14 +500,18 @@
                     registerStatus.innerText = '';
                     return;
                 }
-                registeredStudents.push({ name: name, descriptor: detection.descriptor, present: false });
+                registeredStudents.push({ name: name, descriptor: detection.descriptor, attendanceRecords: [] });
                 saveDataToLocalStorage();
                 renderAttendanceList();
                 await updateFaceMatcher();
                 iziToast.success({ title: 'Berhasil', message: `"${name}" berhasil didaftarkan!` });
+                // Reset form
                 registerStatus.innerText = '';
                 nameInput.value = '';
                 imageUpload.value = '';
+                capturedImageBlob = null;
+                imagePreviewContainer.classList.add('hidden');
+
             } catch (error) {
                 console.error("Error saat registrasi:", error);
                 iziToast.error({ title: 'Error', message: 'Terjadi kesalahan saat memproses gambar.' });
@@ -409,12 +569,15 @@
                         new faceapi.draw.DrawBox(box, { label: result.toString() }).draw(canvas);
                         if (result.label !== 'unknown') {
                             const student = registeredStudents.find(s => s.name === result.label);
-                            if (student && !student.present) {
+                            const today = getTodayDateString();
+                            const alreadyAttended = student && student.attendanceRecords.some(rec => rec.date === today);
+                            
+                            if (student && !alreadyAttended) {
                                 const now = new Date();
-                                student.present = true;
-                                student.hari = now.toLocaleDateString('id-ID', { weekday: 'long' });
-                                student.tanggal = now.toLocaleDateString('id-ID');
-                                student.jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                                student.attendanceRecords.push({
+                                    date: today,
+                                    time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                                });
                                 showSuccessNotification(student.name);
                                 playSuccessSound(student.name);
                                 saveDataToLocalStorage();
@@ -426,6 +589,101 @@
                     detectionStatus.innerText = 'Arahkan wajah ke kamera...';
                 }
             }, 200);
+        });
+
+        // --- MODAL & CAMERA LISTENERS ---
+        fab.addEventListener('click', () => {
+            pinModal.classList.remove('hidden');
+            pinInput.focus();
+        });
+
+        pinCancel.addEventListener('click', () => {
+            pinModal.classList.add('hidden');
+            pinInput.value = '';
+        });
+
+        pinSubmit.addEventListener('click', () => {
+            pinSubmitText.classList.add('hidden');
+            pinLoader.classList.remove('hidden');
+            pinSubmit.disabled = true;
+            pinCancel.disabled = true;
+
+            setTimeout(() => {
+                if (pinInput.value === 'ciemas25') {
+                    pinModal.classList.add('hidden');
+                    registrationModal.classList.remove('hidden');
+                    pinInput.value = '';
+                } else {
+                    iziToast.error({ title: 'Gagal', message: 'PIN yang Anda masukkan salah.' });
+                    pinInput.value = '';
+                }
+
+                pinSubmitText.classList.remove('hidden');
+                pinLoader.classList.add('hidden');
+                pinSubmit.disabled = false;
+                pinCancel.disabled = false;
+            }, 500);
+        });
+        
+        pinInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                pinSubmit.click();
+            }
+        });
+
+        closeRegistrationModal.addEventListener('click', () => {
+            registrationModal.classList.add('hidden');
+        });
+
+        takePictureButton.addEventListener('click', async () => {
+            cameraModal.classList.remove('hidden');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                cameraPreview.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera for capture:", err);
+                iziToast.error({ title: 'Error', message: 'Gagal mengakses kamera.' });
+                cameraModal.classList.add('hidden');
+            }
+        });
+
+        function stopCaptureStream() {
+            if (cameraPreview.srcObject) {
+                cameraPreview.srcObject.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        cancelCaptureBtn.addEventListener('click', () => {
+            stopCaptureStream();
+            cameraModal.classList.add('hidden');
+        });
+
+        captureBtn.addEventListener('click', () => {
+            const context = captureCanvas.getContext('2d');
+            captureCanvas.width = cameraPreview.videoWidth;
+            captureCanvas.height = cameraPreview.videoHeight;
+            context.drawImage(cameraPreview, 0, 0, captureCanvas.width, captureCanvas.height);
+            
+            captureCanvas.toBlob(blob => {
+                capturedImageBlob = blob;
+                imagePreview.src = URL.createObjectURL(blob);
+                imageName.textContent = 'Gambar dari kamera.png';
+                imagePreviewContainer.classList.remove('hidden');
+                imageUpload.value = ''; // Clear file input
+            }, 'image/png');
+
+            stopCaptureStream();
+            cameraModal.classList.add('hidden');
+        });
+
+        imageUpload.addEventListener('change', () => {
+            const file = imageUpload.files[0];
+            if (file) {
+                capturedImageBlob = null; // Clear captured blob
+                imagePreview.src = URL.createObjectURL(file);
+                imageName.textContent = file.name;
+                imagePreviewContainer.classList.remove('hidden');
+            }
         });
 
         // --- EXPORT/IMPORT LISTENERS ---
@@ -459,7 +717,9 @@
                         throw new Error('Format file tidak valid.');
                     }
                     if (confirm('Ini akan menimpa semua data peserta yang ada. Lanjutkan?')) {
-                        localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(data));
+                        // Saat impor, pastikan struktur data baru diterapkan
+                        const importedData = data.map(p => ({...p, attendanceRecords: p.attendanceRecords || []}));
+                        localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(importedData));
                         loadAndResetData();
                         renderAttendanceList();
                         await updateFaceMatcher();
@@ -475,24 +735,90 @@
             reader.readAsText(file);
         });
 
+        // --- REKAP LISTENERS ---
+        recapButton.addEventListener('click', () => {
+            recapModal.classList.remove('hidden');
+            recapContent.classList.add('hidden');
+            recapLoader.classList.remove('hidden');
+
+            // Populate month dropdown
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            recapMonth.innerHTML = months.map((month, index) => `<option value="${index}">${month}</option>`).join('');
+            
+            // Set default to current month and year
+            const now = new Date();
+            recapMonth.value = now.getMonth();
+            recapYear.value = now.getFullYear();
+
+            setTimeout(() => {
+                recapLoader.classList.add('hidden');
+                recapContent.classList.remove('hidden');
+                recapResultContainer.classList.add('hidden');
+            }, 500);
+        });
+
+        closeRecapModal.addEventListener('click', () => {
+            recapModal.classList.add('hidden');
+        });
+
+        showRecapButton.addEventListener('click', () => {
+            const selectedMonth = parseInt(recapMonth.value);
+            const selectedYear = parseInt(recapYear.value);
+
+            recapResultTable.innerHTML = ''; // Clear previous results
+            
+            const recapData = registeredStudents.map(student => {
+                const attendanceCount = student.attendanceRecords.filter(record => {
+                    const recordDate = new Date(record.date);
+                    return recordDate.getMonth() === selectedMonth && recordDate.getFullYear() === selectedYear;
+                }).length;
+
+                return {
+                    name: student.name,
+                    count: attendanceCount
+                };
+            });
+
+            if (recapData.length === 0) {
+                recapResultTable.innerHTML = `<tr><td colspan="3" class="text-center py-4">Tidak ada data peserta.</td></tr>`;
+            } else {
+                recapData.forEach((data, index) => {
+                    const row = `
+                        <tr>
+                            <td class="py-2 px-4 border-b">${index + 1}</td>
+                            <td class="py-2 px-4 border-b">${data.name}</td>
+                            <td class="py-2 px-4 border-b">${data.count}</td>
+                        </tr>
+                    `;
+                    recapResultTable.innerHTML += row;
+                });
+            }
+
+            recapResultContainer.classList.remove('hidden');
+        });
+
         // --- REKAP EXCEL LISTENER ---
         exportExcelButton.addEventListener('click', () => {
             if (registeredStudents.length === 0) {
                 iziToast.info({ title: 'Info', message: 'Tidak ada data absensi untuk direkap.' });
                 return;
             }
-            const dataForSheet = registeredStudents.map(student => ({
-                Nama: student.name,
-                Status: student.present ? 'Hadir' : 'Belum Hadir',
-                Hari: student.hari || '-',
-                Tanggal: student.tanggal || '-',
-                Jam: student.jam || '-'
-            }));
+            const dataForSheet = registeredStudents.map(student => {
+                const todaysRecord = student.attendanceRecords.find(rec => rec.date === getTodayDateString());
+                const recordDate = todaysRecord ? new Date(todaysRecord.date + 'T' + todaysRecord.time) : null;
+                return {
+                    Nama: student.name,
+                    Status: todaysRecord ? 'Hadir' : 'Belum Hadir',
+                    Hari: recordDate ? recordDate.toLocaleDateString('id-ID', { weekday: 'long' }) : '-',
+                    Tanggal: recordDate ? recordDate.toLocaleDateString('id-ID') : '-',
+                    Jam: recordDate ? recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'
+                };
+            });
             const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Absensi');
-            XLSX.writeFile(workbook, `Rekap_Absensi_${getTodayDateString()}.xlsx`);
-            iziToast.success({ title: 'Berhasil', message: 'File rekap berhasil dibuat.' });
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap Absensi Harian');
+            XLSX.writeFile(workbook, `Rekap_Harian_${getTodayDateString()}.xlsx`);
+            iziToast.success({ title: 'Berhasil', message: 'File rekap harian berhasil dibuat.' });
         });
         
         // --- REKAP PDF LISTENER ---
@@ -503,28 +829,26 @@
             }
 
             const { jsPDF } = window.jspdf;
-            // apply plugin
-            jsPDF.autoTableSetDefaults({
-                headStyles: { fillColor: [15, 76, 129] },
-            });
             const doc = new jsPDF();
-
+            
             const tableColumn = ["Nama", "Status", "Hari", "Tanggal", "Jam"];
             const tableRows = [];
 
             registeredStudents.forEach(student => {
+                const todaysRecord = student.attendanceRecords.find(rec => rec.date === getTodayDateString());
+                const recordDate = todaysRecord ? new Date(todaysRecord.date + 'T' + todaysRecord.time) : null;
                 const studentData = [
                     student.name,
-                    student.present ? 'Hadir' : 'Belum Hadir',
-                    student.hari || '-',
-                    student.tanggal || '-',
-                    student.jam || '-'
+                    todaysRecord ? 'Hadir' : 'Belum Hadir',
+                    recordDate ? recordDate.toLocaleDateString('id-ID', { weekday: 'long' }) : '-',
+                    recordDate ? recordDate.toLocaleDateString('id-ID') : '-',
+                    recordDate ? recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'
                 ];
                 tableRows.push(studentData);
             });
 
             doc.setFontSize(18);
-            doc.text("Rekapitulasi Daftar Hadir", 14, 22);
+            doc.text("Rekapitulasi Daftar Hadir Harian", 14, 22);
             
             doc.autoTable({
                 head: [tableColumn],
@@ -532,8 +856,8 @@
                 startY: 30,
             });
             
-            doc.save(`Rekap_Absensi_${getTodayDateString()}.pdf`);
-            iziToast.success({ title: 'Berhasil', message: 'File PDF rekap berhasil dibuat.' });
+            doc.save(`Rekap_Harian_${getTodayDateString()}.pdf`);
+            iziToast.success({ title: 'Berhasil', message: 'File PDF rekap harian berhasil dibuat.' });
         });
     </script>
 </body>
