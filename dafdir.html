@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EDIP-Aplikasi Absensi Wajah</title>
+    <title>Aplikasi Absensi Wajah</title>
     <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Import library face-api.js -->
@@ -67,7 +67,7 @@
         <!-- Loading Indicator -->
         <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
             <div class="loader"></div>
-            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model ...</p>
+            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model AI...</p>
         </div>
 
         <main class="grid grid-cols-1 gap-8">
@@ -110,6 +110,7 @@
                                     <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hari</th>
                                     <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                     <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jam</th>
+                                    <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="attendance-list" class="divide-y divide-gray-200">
@@ -178,8 +179,9 @@
                                 <p id="imageName" class="text-xs text-gray-500 mt-1"></p>
                             </div>
                         </div>
-                        <button id="registerButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400">
-                            Daftarkan Wajah
+                        <button id="registerButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 flex items-center justify-center h-10 disabled:bg-indigo-400">
+                            <span id="registerButtonText">Daftarkan Wajah</span>
+                            <div id="registerLoader" class="hidden loader-sm"></div>
                         </button>
                         <p id="register-status" class="text-center text-sm text-gray-500 h-4"></p>
                     </div>
@@ -255,18 +257,23 @@
                 </div>
                 <button id="showRecapButton" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">Tampilkan Rekap</button>
                 <div id="recapResultContainer" class="mt-6 hidden">
-                    <h3 class="text-xl font-semibold mb-2 text-gray-800">Hasil Rekap</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                                    <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
-                                    <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Kehadiran</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recapResultTable" class="divide-y divide-gray-200"></tbody>
-                        </table>
+                    <div id="recapProcessLoader" class="hidden flex justify-center items-center py-10">
+                        <div class="loader"></div>
+                    </div>
+                    <div id="recapTableContent">
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800">Hasil Rekap</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                        <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Lengkap</th>
+                                        <th class="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Kehadiran</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recapResultTable" class="divide-y divide-gray-200"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -318,6 +325,10 @@
         const showRecapButton = document.getElementById('showRecapButton');
         const recapResultContainer = document.getElementById('recapResultContainer');
         const recapResultTable = document.getElementById('recapResultTable');
+        const recapProcessLoader = document.getElementById('recapProcessLoader');
+        const recapTableContent = document.getElementById('recapTableContent');
+        const registerButtonText = document.getElementById('registerButtonText');
+        const registerLoader = document.getElementById('registerLoader');
 
 
         // --- STATE MANAGEMENT ---
@@ -409,14 +420,25 @@
                 let hari = '-';
                 let tanggal = '-';
                 let jam = '-';
+                let actionButton = '<td></td>'; // Empty cell if not attended
 
                 if (todaysRecord) {
                     statusBadge = `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>`;
                     row.classList.add('bg-green-50');
-                    const recordDate = new Date(todaysRecord.date + 'T' + todaysRecord.time);
-                    hari = recordDate.toLocaleDateString('id-ID', { weekday: 'long' });
-                    tanggal = recordDate.toLocaleDateString('id-ID');
-                    jam = recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    // Safely create date object
+                    const recordDate = new Date(`${todaysRecord.date}T${todaysRecord.time}`);
+                    if (!isNaN(recordDate)) {
+                        hari = recordDate.toLocaleDateString('id-ID', { weekday: 'long' });
+                        tanggal = recordDate.toLocaleDateString('id-ID');
+                        jam = recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    }
+                    actionButton = `
+                        <td class="py-4 px-6 text-center">
+                            <button class="reset-attendance-btn text-xs bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-2 rounded" data-name="${student.name}">
+                                Ulangi
+                            </button>
+                        </td>
+                    `;
                 }
 
                 row.innerHTML = `
@@ -425,6 +447,7 @@
                     <td class="py-4 px-6 text-sm text-gray-700">${hari}</td>
                     <td class="py-4 px-6 text-sm text-gray-700">${tanggal}</td>
                     <td class="py-4 px-6 text-sm text-gray-700">${jam}</td>
+                    ${actionButton}
                 `;
                 attendanceList.appendChild(row);
             });
@@ -485,19 +508,20 @@
                 iziToast.warning({ title: 'Input Tidak Lengkap', message: 'Nama dan foto wajah harus diisi.' });
                 return;
             }
-            registerStatus.innerText = 'Memproses gambar...';
+            
+            registerButtonText.classList.add('hidden');
+            registerLoader.classList.remove('hidden');
             registerButton.disabled = true;
+
             try {
                 const image = await faceapi.bufferToImage(imageSource);
                 const detection = await faceapi.detectSingleFace(image, new faceapi.SsdMobilenetv1Options()).withFaceLandmarks().withFaceDescriptor();
                 if (!detection) {
                     iziToast.error({ title: 'Gagal', message: 'Wajah tidak terdeteksi di gambar.' });
-                    registerStatus.innerText = '';
                     return;
                 }
                 if(registeredStudents.find(s => s.name.toLowerCase() === name.toLowerCase())){
                     iziToast.warning({ title: 'Duplikat', message: `Nama "${name}" sudah terdaftar.` });
-                    registerStatus.innerText = '';
                     return;
                 }
                 registeredStudents.push({ name: name, descriptor: detection.descriptor, attendanceRecords: [] });
@@ -506,7 +530,6 @@
                 await updateFaceMatcher();
                 iziToast.success({ title: 'Berhasil', message: `"${name}" berhasil didaftarkan!` });
                 // Reset form
-                registerStatus.innerText = '';
                 nameInput.value = '';
                 imageUpload.value = '';
                 capturedImageBlob = null;
@@ -515,8 +538,9 @@
             } catch (error) {
                 console.error("Error saat registrasi:", error);
                 iziToast.error({ title: 'Error', message: 'Terjadi kesalahan saat memproses gambar.' });
-                registerStatus.innerText = '';
             } finally {
+                registerButtonText.classList.remove('hidden');
+                registerLoader.classList.add('hidden');
                 registerButton.disabled = false;
             }
         });
@@ -741,11 +765,9 @@
             recapContent.classList.add('hidden');
             recapLoader.classList.remove('hidden');
 
-            // Populate month dropdown
             const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             recapMonth.innerHTML = months.map((month, index) => `<option value="${index}">${month}</option>`).join('');
             
-            // Set default to current month and year
             const now = new Date();
             recapMonth.value = now.getMonth();
             recapYear.value = now.getFullYear();
@@ -762,39 +784,42 @@
         });
 
         showRecapButton.addEventListener('click', () => {
-            const selectedMonth = parseInt(recapMonth.value);
-            const selectedYear = parseInt(recapYear.value);
-
-            recapResultTable.innerHTML = ''; // Clear previous results
-            
-            const recapData = registeredStudents.map(student => {
-                const attendanceCount = student.attendanceRecords.filter(record => {
-                    const recordDate = new Date(record.date);
-                    return recordDate.getMonth() === selectedMonth && recordDate.getFullYear() === selectedYear;
-                }).length;
-
-                return {
-                    name: student.name,
-                    count: attendanceCount
-                };
-            });
-
-            if (recapData.length === 0) {
-                recapResultTable.innerHTML = `<tr><td colspan="3" class="text-center py-4">Tidak ada data peserta.</td></tr>`;
-            } else {
-                recapData.forEach((data, index) => {
-                    const row = `
-                        <tr>
-                            <td class="py-2 px-4 border-b">${index + 1}</td>
-                            <td class="py-2 px-4 border-b">${data.name}</td>
-                            <td class="py-2 px-4 border-b">${data.count}</td>
-                        </tr>
-                    `;
-                    recapResultTable.innerHTML += row;
-                });
-            }
-
             recapResultContainer.classList.remove('hidden');
+            recapTableContent.classList.add('hidden');
+            recapProcessLoader.classList.remove('hidden');
+            
+            setTimeout(() => {
+                const selectedMonth = parseInt(recapMonth.value);
+                const selectedYear = parseInt(recapYear.value);
+
+                recapResultTable.innerHTML = '';
+                
+                const recapData = registeredStudents.map(student => {
+                    const attendanceCount = student.attendanceRecords.filter(record => {
+                        const recordDate = new Date(record.date);
+                        return recordDate.getMonth() === selectedMonth && recordDate.getFullYear() === selectedYear;
+                    }).length;
+
+                    return { name: student.name, count: attendanceCount };
+                });
+
+                if (recapData.length === 0) {
+                    recapResultTable.innerHTML = `<tr><td colspan="3" class="text-center py-4">Tidak ada data peserta.</td></tr>`;
+                } else {
+                    recapData.forEach((data, index) => {
+                        const row = `
+                            <tr>
+                                <td class="py-2 px-4 border-b">${index + 1}</td>
+                                <td class="py-2 px-4 border-b">${data.name}</td>
+                                <td class="py-2 px-4 border-b">${data.count}</td>
+                            </tr>
+                        `;
+                        recapResultTable.innerHTML += row;
+                    });
+                }
+                recapProcessLoader.classList.add('hidden');
+                recapTableContent.classList.remove('hidden');
+            }, 500);
         });
 
         // --- REKAP EXCEL LISTENER ---
@@ -805,13 +830,13 @@
             }
             const dataForSheet = registeredStudents.map(student => {
                 const todaysRecord = student.attendanceRecords.find(rec => rec.date === getTodayDateString());
-                const recordDate = todaysRecord ? new Date(todaysRecord.date + 'T' + todaysRecord.time) : null;
+                const recordDate = todaysRecord ? new Date(`${todaysRecord.date}T${todaysRecord.time}`) : null;
                 return {
                     Nama: student.name,
                     Status: todaysRecord ? 'Hadir' : 'Belum Hadir',
-                    Hari: recordDate ? recordDate.toLocaleDateString('id-ID', { weekday: 'long' }) : '-',
-                    Tanggal: recordDate ? recordDate.toLocaleDateString('id-ID') : '-',
-                    Jam: recordDate ? recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'
+                    Hari: recordDate && !isNaN(recordDate) ? recordDate.toLocaleDateString('id-ID', { weekday: 'long' }) : '-',
+                    Tanggal: recordDate && !isNaN(recordDate) ? recordDate.toLocaleDateString('id-ID') : '-',
+                    Jam: recordDate && !isNaN(recordDate) ? recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'
                 };
             });
             const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
@@ -836,13 +861,13 @@
 
             registeredStudents.forEach(student => {
                 const todaysRecord = student.attendanceRecords.find(rec => rec.date === getTodayDateString());
-                const recordDate = todaysRecord ? new Date(todaysRecord.date + 'T' + todaysRecord.time) : null;
+                const recordDate = todaysRecord ? new Date(`${todaysRecord.date}T${todaysRecord.time}`) : null;
                 const studentData = [
                     student.name,
                     todaysRecord ? 'Hadir' : 'Belum Hadir',
-                    recordDate ? recordDate.toLocaleDateString('id-ID', { weekday: 'long' }) : '-',
-                    recordDate ? recordDate.toLocaleDateString('id-ID') : '-',
-                    recordDate ? recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'
+                    recordDate && !isNaN(recordDate) ? recordDate.toLocaleDateString('id-ID', { weekday: 'long' }) : '-',
+                    recordDate && !isNaN(recordDate) ? recordDate.toLocaleDateString('id-ID') : '-',
+                    recordDate && !isNaN(recordDate) ? recordDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'
                 ];
                 tableRows.push(studentData);
             });
@@ -858,6 +883,22 @@
             
             doc.save(`Rekap_Harian_${getTodayDateString()}.pdf`);
             iziToast.success({ title: 'Berhasil', message: 'File PDF rekap harian berhasil dibuat.' });
+        });
+
+        // --- RESET ATTENDANCE LISTENER ---
+        attendanceList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('reset-attendance-btn')) {
+                const studentName = event.target.getAttribute('data-name');
+                const student = registeredStudents.find(s => s.name === studentName);
+                const today = getTodayDateString();
+
+                if (student) {
+                    student.attendanceRecords = student.attendanceRecords.filter(rec => rec.date !== today);
+                    saveDataToLocalStorage();
+                    renderAttendanceList();
+                    iziToast.info({ title: 'Info', message: `Kehadiran untuk ${studentName} hari ini telah direset.` });
+                }
+            }
         });
     </script>
 </body>
