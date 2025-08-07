@@ -74,9 +74,12 @@
         <main class="grid grid-cols-1 gap-8">
             <!-- Kolom Absensi dan Daftar Hadir -->
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="flex justify-center mb-4">
+                <div class="flex justify-center mb-4 space-x-4">
                     <button id="startButton" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400">
                         Mulai Absensi via Camera
+                    </button>
+                    <button id="switchCameraButton" class="hidden w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">
+                        Ganti Kamera
                     </button>
                 </div>
                 <div class="video-container bg-gray-900 aspect-[9/16] md:aspect-video mx-auto">
@@ -360,6 +363,7 @@
         const exportRecapPdfButton = document.getElementById('exportRecapPdfButton');
         const exportAttendanceButton = document.getElementById('exportAttendanceButton');
         const importAttendanceFile = document.getElementById('importAttendanceFile');
+        const switchCameraButton = document.getElementById('switchCameraButton');
 
 
         // --- STATE MANAGEMENT ---
@@ -370,6 +374,8 @@
         const STUDENTS_STORAGE_KEY = 'faceAttendanceApp_students';
         let synthVoices = [];
         let currentRecapData = [];
+        let videoDevices = [];
+        let currentDeviceIndex = 0;
 
         // --- NOTIFICATION FUNCTION ---
         function showSuccessNotification(name) {
@@ -508,6 +514,7 @@
         // --- INITIALIZATION ---
         async function initializeApp() {
             await loadModels();
+            await getVideoDevices();
             loadAndResetData();
             renderAttendanceList();
             await updateFaceMatcher();
@@ -522,13 +529,13 @@
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
                     faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL)
                 ]);
-                loadingText.innerText = 'Model berhasil dimuat. Aplikasi siap digunakan.';
+                loadingText.innerText = 'Aplikasi siap digunakan.';
                 setTimeout(() => {
                     loadingDiv.style.display = 'none';
                 }, 1500);
             } catch (error) {
                 console.error("Gagal memuat model:", error);
-                loadingText.innerText = 'Gagal memuat model AI. Coba segarkan halaman.';
+                loadingText.innerText = 'Gagal memuat model. Coba segarkan halaman.';
             }
         }
         
@@ -547,6 +554,15 @@
                 faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5); // Stricter threshold
             } else {
                 faceMatcher = null;
+            }
+        }
+        
+        async function getVideoDevices() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                videoDevices = devices.filter(device => device.kind === 'videoinput');
+            } catch (err) {
+                console.error("Tidak bisa mendapatkan daftar perangkat kamera:", err);
             }
         }
 
@@ -607,23 +623,30 @@
                 stopAttendanceStream();
                 return;
             }
-            startButton.innerText = "Mengakses Webcam...";
+            startButton.innerText = "Mengakses Camera...";
             startButton.disabled = true;
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        width: { ideal: 640 }, 
-                        height: { ideal: 480 } 
-                    } 
-                });
+                const constraints = {
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                };
+                if (videoDevices.length > 0) {
+                    constraints.video.deviceId = { exact: videoDevices[currentDeviceIndex].deviceId };
+                }
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 startButton.innerText = "Hentikan Absensi";
                 startButton.classList.replace('bg-green-600', 'bg-red-600');
                 startButton.classList.replace('hover:bg-green-700', 'hover:bg-red-700');
+                if (videoDevices.length > 1) {
+                    switchCameraButton.classList.remove('hidden');
+                }
             } catch (err) {
                 console.error("Error mengakses webcam: ", err);
                 iziToast.error({ title: 'Error', message: 'Gagal mengakses webcam. Pastikan Anda memberikan izin.' });
-                startButton.innerText = "Mulai Absensi via Webcam";
+                startButton.innerText = "Mulai Absensi via Camera";
             } finally {
                 startButton.disabled = false;
             }
@@ -676,12 +699,19 @@
                 if (video.srcObject) {
                     video.srcObject.getTracks().forEach(track => track.stop());
                 }
-                startButton.innerText = "Mulai Absensi via Webcam";
+                startButton.innerText = "Mulai Absensi via Camera";
                 startButton.classList.replace('bg-red-600', 'bg-green-600');
                 startButton.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+                switchCameraButton.classList.add('hidden');
                 canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
             }
         }
+
+        switchCameraButton.addEventListener('click', () => {
+            currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+            stopAttendanceStream();
+            setTimeout(() => startButton.click(), 100); // Delay to ensure stream is stopped
+        });
 
         fab.addEventListener('click', () => {
             stopAttendanceStream(); // Hentikan absensi saat FAB diklik
