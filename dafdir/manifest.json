@@ -2,9 +2,9 @@
   "name": "EDIP | Aplikasi Absensi Wajah",
   "short_name": "Absensi EDIP",
   "description": "Aplikasi absensi wajah yang bisa digunakan secara offline.",
-  "start_url": ".",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#f3f4f6",
+  "background_color": "#ffffff",
   "theme_color": "#4f46e5",
   "icons": [
     {
