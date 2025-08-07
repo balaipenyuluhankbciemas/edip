@@ -1,12 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDIP | Aplikasi Absensi</title>
     <!-- Shortcut Icon -->
     <link rel="shortcut icon" href="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png">
-    <title>EDIP | Aplikasi Absensi</title>
     <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Import library face-api.js -->
@@ -63,14 +62,13 @@
 <body class="bg-gray-100 font-sans text-gray-800">
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Aplikasi Absensi</h1>
-            <!--<p class="text-gray-600 mt-2">Mulai absensi dengan Camera</p>-->
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Aplikasi Absensi Wajah</h1>
         </header>
 
         <!-- Loading Indicator -->
         <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
             <div class="loader"></div>
-            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model ...</p>
+            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model...</p>
         </div>
 
         <main class="grid grid-cols-1 gap-8">
@@ -78,7 +76,7 @@
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex justify-center mb-4">
                     <button id="startButton" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400">
-                        Mulai Absensi via Camera
+                        Mulai Absensi via Webcam
                     </button>
                 </div>
                 <div class="video-container bg-gray-900 aspect-[9/16] md:aspect-video mx-auto">
@@ -215,6 +213,13 @@
                             Impor Data Peserta
                         </label>
                         <input type="file" id="importFile" class="hidden" accept=".json">
+                        <button id="exportAttendanceButton" class="w-full bg-cyan-600 text-white py-2 px-4 rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
+                            Ekspor Kehadiran
+                        </button>
+                        <label for="importAttendanceFile" class="w-full text-center bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 cursor-pointer">
+                            Impor Kehadiran
+                        </label>
+                        <input type="file" id="importAttendanceFile" class="hidden" accept=".json">
                     </div>
                 </div>
             </div>
@@ -353,6 +358,8 @@
         const registerLoader = document.getElementById('registerLoader');
         const registeredListTableBody = document.getElementById('registeredListTableBody');
         const exportRecapPdfButton = document.getElementById('exportRecapPdfButton');
+        const exportAttendanceButton = document.getElementById('exportAttendanceButton');
+        const importAttendanceFile = document.getElementById('importAttendanceFile');
 
 
         // --- STATE MANAGEMENT ---
@@ -822,6 +829,61 @@
             reader.readAsText(file);
         });
 
+        exportAttendanceButton.addEventListener('click', () => {
+            if (registeredStudents.length === 0) {
+                iziToast.info({ title: 'Info', message: 'Tidak ada data kehadiran untuk diekspor.' });
+                return;
+            }
+            const dataToExport = registeredStudents.map(s => ({name: s.name, attendanceRecords: s.attendanceRecords}));
+            const dataStr = JSON.stringify(dataToExport, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `data_kehadiran_${getTodayDateString()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            iziToast.success({ title: 'Berhasil', message: 'Data kehadiran telah diekspor.' });
+        });
+
+        importAttendanceFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const importedAttendance = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedAttendance) || importedAttendance.some(item => !item.name || !item.attendanceRecords)) {
+                        throw new Error('Format file tidak valid.');
+                    }
+                    if (confirm('Ini akan menggabungkan data kehadiran yang ada. Lanjutkan?')) {
+                        importedAttendance.forEach(importedStudent => {
+                            const existingStudent = registeredStudents.find(s => s.name === importedStudent.name);
+                            if (existingStudent) {
+                                const existingDates = new Set(existingStudent.attendanceRecords.map(rec => rec.date));
+                                importedStudent.attendanceRecords.forEach(newRecord => {
+                                    if (!existingDates.has(newRecord.date)) {
+                                        existingStudent.attendanceRecords.push(newRecord);
+                                    }
+                                });
+                            }
+                        });
+                        saveDataToLocalStorage();
+                        renderAttendanceList();
+                        iziToast.success({ title: 'Berhasil', message: `Data kehadiran berhasil digabungkan.` });
+                    }
+                } catch (error) {
+                    console.error("Gagal mengimpor data kehadiran:", error);
+                    iziToast.error({ title: 'Gagal', message: `File tidak dapat diimpor. Pastikan formatnya benar. (${error.message})` });
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        });
+
         // --- REKAP LISTENERS ---
         function getWorkdaysInMonth(month, year) {
             const date = new Date(year, month, 1);
@@ -1064,4 +1126,3 @@
     </script>
 </body>
 </html>
-
