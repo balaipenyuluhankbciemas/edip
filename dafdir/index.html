@@ -374,8 +374,7 @@
         const STUDENTS_STORAGE_KEY = 'faceAttendanceApp_students';
         let synthVoices = [];
         let currentRecapData = [];
-        let videoDevices = [];
-        let currentDeviceIndex = 0;
+        let currentFacingMode = 'user'; // 'user' for front, 'environment' for back
 
         // --- NOTIFICATION FUNCTION ---
         function showSuccessNotification(name) {
@@ -514,7 +513,6 @@
         // --- INITIALIZATION ---
         async function initializeApp() {
             await loadModels();
-            await getVideoDevices();
             loadAndResetData();
             renderAttendanceList();
             await updateFaceMatcher();
@@ -554,15 +552,6 @@
                 faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.5); // Stricter threshold
             } else {
                 faceMatcher = null;
-            }
-        }
-        
-        async function getVideoDevices() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                videoDevices = devices.filter(device => device.kind === 'videoinput');
-            } catch (err) {
-                console.error("Tidak bisa mendapatkan daftar perangkat kamera:", err);
             }
         }
 
@@ -627,22 +616,18 @@
             startButton.disabled = true;
             try {
                 const constraints = {
-                    video: {
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
-                    }
+                    video: { 
+                        width: { ideal: 640 }, 
+                        height: { ideal: 480 },
+                        facingMode: currentFacingMode
+                    } 
                 };
-                if (videoDevices.length > 0) {
-                    constraints.video.deviceId = { exact: videoDevices[currentDeviceIndex].deviceId };
-                }
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 startButton.innerText = "Hentikan Absensi";
                 startButton.classList.replace('bg-green-600', 'bg-red-600');
                 startButton.classList.replace('hover:bg-green-700', 'hover:bg-red-700');
-                if (videoDevices.length > 1) {
-                    switchCameraButton.classList.remove('hidden');
-                }
+                switchCameraButton.classList.remove('hidden');
             } catch (err) {
                 console.error("Error mengakses webcam: ", err);
                 iziToast.error({ title: 'Error', message: 'Gagal mengakses webcam. Pastikan Anda memberikan izin.' });
@@ -708,7 +693,7 @@
         }
 
         switchCameraButton.addEventListener('click', () => {
-            currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+            currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
             stopAttendanceStream();
             setTimeout(() => startButton.click(), 100); // Delay to ensure stream is stopped
         });
