@@ -8,8 +8,10 @@
     <link rel="manifest" href="manifest.json">
     <!-- Shortcut Icon -->
     <link rel="shortcut icon" href="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png">
-    <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif 
+    <script src="https://cdn.tailwindcss.com"></script>-->
+    <script src="styles.css"></script>
+    
     <!-- Import library face-api.js -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <!-- Import iziToast untuk notifikasi -->
@@ -1157,6 +1159,7 @@
         });
     </script>
 
+    <!--
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -1171,9 +1174,20 @@
             });
         }
     </script>
+    -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('✅ Service Worker terdaftar.', reg))
+                    .catch(err => console.error('❌ Pendaftaran Service Worker gagal:', err));
+            });
+        }
+    </script>
     
 </body>
 </html>
+
 
 
 
