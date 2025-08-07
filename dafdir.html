@@ -1,9 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Absensi Wajah</title>
+    <!-- Shortcut Icon -->
+    <link rel="shortcut icon" href="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png">
+    <title>EDIP | Aplikasi Absensi</title>
     <!-- Menggunakan Tailwind CSS untuk styling yang modern dan responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Import library face-api.js -->
@@ -60,26 +63,25 @@
 <body class="bg-gray-100 font-sans text-gray-800">
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Aplikasi Absensi Wajah</h1>
-            <p class="text-gray-600 mt-2">Mulai absensi dengan webcam. Klik tombol di kanan bawah untuk registrasi.</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Aplikasi Absensi</h1>
+            <p class="text-gray-600 mt-2">Mulai absensi dengan Camera</p>
         </header>
 
         <!-- Loading Indicator -->
         <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
             <div class="loader"></div>
-            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model AI...</p>
+            <p id="loading-text" class="text-white mt-4 text-lg">Memuat model ...</p>
         </div>
 
         <main class="grid grid-cols-1 gap-8">
             <!-- Kolom Absensi dan Daftar Hadir -->
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Absensi Real-time</h2>
                 <div class="flex justify-center mb-4">
                     <button id="startButton" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400">
-                        Mulai Absensi via Webcam
+                        Mulai Absensi via Camera
                     </button>
                 </div>
-                <div class="video-container bg-gray-900 aspect-video mx-auto">
+                <div class="video-container bg-gray-900 aspect-[9/16] md:aspect-video mx-auto">
                     <video id="video" autoplay muted playsinline></video>
                     <canvas id="canvas"></canvas>
                 </div>
@@ -277,7 +279,10 @@
                         <div class="loader"></div>
                     </div>
                     <div id="recapTableContent">
-                        <h3 class="text-xl font-semibold mb-2 text-gray-800">Hasil Rekap</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xl font-semibold text-gray-800">Hasil Rekap</h3>
+                            <button id="exportRecapPdfButton" class="hidden bg-purple-600 text-white py-1 px-3 rounded-md hover:bg-purple-700 text-sm">Export PDF Rekap</button>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="min-w-full bg-white border">
                                 <thead class="bg-gray-50">
@@ -347,6 +352,7 @@
         const registerButtonText = document.getElementById('registerButtonText');
         const registerLoader = document.getElementById('registerLoader');
         const registeredListTableBody = document.getElementById('registeredListTableBody');
+        const exportRecapPdfButton = document.getElementById('exportRecapPdfButton');
 
 
         // --- STATE MANAGEMENT ---
@@ -356,6 +362,7 @@
         let capturedImageBlob = null;
         const STUDENTS_STORAGE_KEY = 'faceAttendanceApp_students';
         let synthVoices = [];
+        let currentRecapData = [];
 
         // --- NOTIFICATION FUNCTION ---
         function showSuccessNotification(name) {
@@ -590,19 +597,18 @@
                 return;
             }
             if (recognitionInterval) {
-                clearInterval(recognitionInterval);
-                recognitionInterval = null;
-                if(video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
-                startButton.innerText = "Mulai Absensi via Webcam";
-                startButton.classList.replace('bg-red-600', 'bg-green-600');
-                startButton.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                stopAttendanceStream();
                 return;
             }
             startButton.innerText = "Mengakses Webcam...";
             startButton.disabled = true;
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 }, 
+                        height: { ideal: 480 } 
+                    } 
+                });
                 video.srcObject = stream;
                 startButton.innerText = "Hentikan Absensi";
                 startButton.classList.replace('bg-green-600', 'bg-red-600');
@@ -619,6 +625,7 @@
         video.addEventListener('play', () => {
             const displaySize = { width: video.clientWidth, height: video.clientHeight };
             faceapi.matchDimensions(canvas, displaySize);
+            // OPTIMISASI: Kurangi frekuensi deteksi untuk meringankan beban di mobile
             recognitionInterval = setInterval(async () => {
                 const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
@@ -651,11 +658,26 @@
                 } else {
                     detectionStatus.innerText = 'Arahkan wajah ke kamera...';
                 }
-            }, 200);
+            }, 700); // Interval diperpanjang menjadi 700ms
         });
 
         // --- MODAL & CAMERA LISTENERS ---
+        function stopAttendanceStream() {
+            if (recognitionInterval) {
+                clearInterval(recognitionInterval);
+                recognitionInterval = null;
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                }
+                startButton.innerText = "Mulai Absensi via Webcam";
+                startButton.classList.replace('bg-red-600', 'bg-green-600');
+                startButton.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
         fab.addEventListener('click', () => {
+            stopAttendanceStream(); // Hentikan absensi saat FAB diklik
             pinModal.classList.remove('hidden');
             pinInput.focus();
         });
@@ -841,6 +863,7 @@
             recapResultContainer.classList.remove('hidden');
             recapTableContent.classList.add('hidden');
             recapProcessLoader.classList.remove('hidden');
+            exportRecapPdfButton.classList.add('hidden');
             
             setTimeout(() => {
                 const selectedMonth = parseInt(recapMonth.value);
@@ -848,28 +871,32 @@
                 const workdaysInMonth = getWorkdaysInMonth(selectedMonth, selectedYear);
 
                 recapResultTable.innerHTML = '';
+                currentRecapData = []; // Clear previous recap data
                 
-                const recapData = registeredStudents.map(student => {
+                const recapData = registeredStudents.map((student, index) => {
                     const attendedRecords = student.attendanceRecords.filter(record => {
                         const recordDate = new Date(record.date);
                         return recordDate.getMonth() === selectedMonth && recordDate.getFullYear() === selectedYear;
                     });
                     const attendedDates = attendedRecords.map(rec => new Date(rec.date).getDate()).join(', ');
-
-                    return { 
+                    
+                    const data = { 
+                        no: index + 1,
                         name: student.name, 
                         attendedDates: attendedDates || '-',
                         attendanceSummary: `${attendedRecords.length} / ${workdaysInMonth} hari`
                     };
+                    currentRecapData.push(data);
+                    return data;
                 });
 
                 if (recapData.length === 0) {
                     recapResultTable.innerHTML = `<tr><td colspan="4" class="text-center py-4">Tidak ada data peserta.</td></tr>`;
                 } else {
-                    recapData.forEach((data, index) => {
+                    recapData.forEach((data) => {
                         const row = `
                             <tr>
-                                <td class="py-2 px-4 border-b">${index + 1}</td>
+                                <td class="py-2 px-4 border-b">${data.no}</td>
                                 <td class="py-2 px-4 border-b">${data.name}</td>
                                 <td class="py-2 px-4 border-b">${data.attendedDates}</td>
                                 <td class="py-2 px-4 border-b">${data.attendanceSummary}</td>
@@ -877,6 +904,7 @@
                         `;
                         recapResultTable.innerHTML += row;
                     });
+                    exportRecapPdfButton.classList.remove('hidden');
                 }
                 recapProcessLoader.classList.add('hidden');
                 recapTableContent.classList.remove('hidden');
@@ -907,7 +935,7 @@
             iziToast.success({ title: 'Berhasil', message: 'File rekap harian berhasil dibuat.' });
         });
         
-        // --- REKAP PDF LISTENER ---
+        // --- REKAP PDF LISTENERS ---
         exportPdfButton.addEventListener('click', () => {
             if (registeredStudents.length === 0) {
                 iziToast.info({ title: 'Info', message: 'Tidak ada data absensi untuk direkap.' });
@@ -944,6 +972,36 @@
             
             doc.save(`Rekap_Harian_${getTodayDateString()}.pdf`);
             iziToast.success({ title: 'Berhasil', message: 'File PDF rekap harian berhasil dibuat.' });
+        });
+        
+        exportRecapPdfButton.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            
+            const selectedMonthText = recapMonth.options[recapMonth.selectedIndex].text;
+            const selectedYear = recapYear.value;
+            
+            const tableColumn = ["No", "Nama Lengkap", "Hari Hadir (Tanggal)", "Jumlah Kehadiran"];
+            const tableRows = currentRecapData.map(data => [data.no, data.name, data.attendedDates, data.attendanceSummary]);
+
+            doc.setFontSize(16);
+            doc.text("REKAPITULASI KEHADIRAN", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.text(`PROVINSI: JAWA BARAT`, 14, 30);
+            doc.text(`KAB/KOTA: SUKABUMI`, 14, 35);
+            doc.text(`KECAMATAN: CIEMAS`, 14, 40);
+            doc.text(`BULAN: ${selectedMonthText.toUpperCase()}`, 14, 45);
+            doc.text(`TAHUN: ${selectedYear}`, 14, 50);
+            
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 55,
+            });
+            
+            doc.save(`Rekap_Bulanan_${selectedMonthText}_${selectedYear}.pdf`);
+            iziToast.success({ title: 'Berhasil', message: 'File PDF rekap bulanan berhasil dibuat.' });
         });
 
         // --- RESET ATTENDANCE LISTENER ---
@@ -1006,3 +1064,4 @@
     </script>
 </body>
 </html>
+
