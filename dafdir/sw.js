@@ -1,13 +1,13 @@
-// Nama cache unik (ubah jika ada pembaruan besar, misal: v3, v4)
-const CACHE_NAME = 'absensi-edip-cache-v2';
+// Nama cache unik untuk versi aplikasi Anda
+const CACHE_NAME = 'absensi-edip-cache-v2'; // Versi dinaikkan untuk memicu update
 
-// Daftar semua aset yang dibutuhkan aplikasi untuk berjalan offline
+// Daftar lengkap semua file dan aset yang perlu disimpan untuk mode offline
 const urlsToCache = [
-  '.', // Alias untuk direktori root (sama dengan 'index.html')
+  // Halaman utama dan file PWA
   'index.html',
   'manifest.json',
   
-  // Aset dari CDN (Styling dan Library)
+  // Aset dari CDN (CSS, JS, Ikon)
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css',
   'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js',
@@ -28,9 +28,8 @@ const urlsToCache = [
   'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights/ssd_mobilenetv1_model.weights'
 ];
 
-// Event 'install': Menyimpan semua aset ke dalam cache
+// Event 'install': Dijalankan saat service worker pertama kali diinstal
 self.addEventListener('install', event => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -38,38 +37,39 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
       .catch(err => {
-        console.error('Gagal menyimpan aset ke cache:', err);
+        console.error('Gagal menyimpan cache saat instalasi:', err);
       })
   );
 });
 
-// Event 'activate': Membersihkan cache versi lama
+// Event 'fetch': Dijalankan setiap kali aplikasi meminta sumber daya
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        // Jika aset ditemukan di cache, kembalikan dari cache
+        if (response) {
+          return response;
+        }
+        // Jika tidak ada di cache, ambil dari jaringan
+        return fetch(event.request);
+      })
+  );
+});
+
+// Event 'activate': Dijalankan untuk membersihkan cache lama
 self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
             console.log('Menghapus cache lama:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Event 'fetch': Mengambil aset dari cache jika tersedia (Cache First Strategy)
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(event.request);
-      })
+    })
   );
 });
