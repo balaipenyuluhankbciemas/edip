@@ -244,16 +244,21 @@
 
     <!-- History Modal -->
     <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl space-y-6">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl space-y-6">
             <div class="flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-gray-900">Riwayat Pembuatan PDF</h2>
+                <div class="flex items-center gap-4">
+                    <h2 class="text-2xl font-bold text-gray-900">Riwayat Pembuatan PDF</h2>
+                    <button id="deleteSelectedBtn" class="hidden btn-action bg-red-600 hover:bg-red-700 px-3 py-2 text-sm">Hapus Terpilih</button>
+                </div>
                 <button id="closeHistoryBtn" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
             </div>
             <div class="overflow-x-auto max-h-96">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                            <th scope="col" class="p-4">
+                                <input type="checkbox" id="selectAllCheckbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                            </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Kegiatan</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Dibuat</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -353,6 +358,8 @@
         const loadMoreBtn = document.getElementById('loadMoreBtn');
         const loadMoreText = document.getElementById('loadMoreText');
         const loadMoreLoader = document.getElementById('loadMoreLoader');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 
         // Main Modal Elements
         const modal = document.getElementById('modal');
@@ -572,11 +579,14 @@
             itemsToDisplay.forEach((item, index) => {
                 const row = `
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${index + 1}</td>
+                        <td class="p-4">
+                            <input type="checkbox" class="history-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded" data-index="${index}">
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.namaKegiatan}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.tanggal}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-x-2">
                             <button class="download-btn text-blue-600 hover:text-blue-800" data-index="${index}">Unduh</button>
+                            <button class="delete-btn text-red-600 hover:text-red-800" data-index="${index}">Hapus</button>
                         </td>
                     </tr>
                 `;
@@ -587,6 +597,16 @@
                 loadMoreBtn.classList.remove('hidden');
             } else {
                 loadMoreBtn.classList.add('hidden');
+            }
+            updateDeleteSelectedButtonState();
+        };
+
+        const updateDeleteSelectedButtonState = () => {
+            const checkedBoxes = document.querySelectorAll('.history-checkbox:checked');
+            if (checkedBoxes.length > 0) {
+                deleteSelectedBtn.classList.remove('hidden');
+            } else {
+                deleteSelectedBtn.classList.add('hidden');
             }
         };
 
@@ -669,11 +689,11 @@
         });
 
         historyTableBody.addEventListener('click', (e) => {
-            if (e.target.classList.contains('download-btn')) {
-                const index = e.target.dataset.index;
-                const history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
-                const item = history[index];
+            const history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
+            const index = e.target.dataset.index;
 
+            if (e.target.classList.contains('download-btn')) {
+                const item = history[index];
                 if (item && item.pdfData) {
                     const link = document.createElement('a');
                     link.href = item.pdfData;
@@ -685,7 +705,69 @@
                 } else {
                     iziToast.error({ title: 'Gagal', message: 'Data PDF tidak ditemukan.', position: 'topRight' });
                 }
+            } else if (e.target.classList.contains('delete-btn')) {
+                iziToast.question({
+                    timeout: 20000,
+                    close: false,
+                    overlay: true,
+                    displayMode: 'once',
+                    id: 'question',
+                    zindex: 9999,
+                    title: 'Konfirmasi',
+                    message: 'Apakah Anda yakin ingin menghapus riwayat ini?',
+                    position: 'center',
+                    buttons: [
+                        ['<button><b>YA</b></button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            history.splice(index, 1);
+                            localStorage.setItem('pdfHistory', JSON.stringify(history));
+                            displayHistoryPage();
+                            iziToast.success({ title: 'Berhasil', message: 'Riwayat telah dihapus.', position: 'topRight' });
+                        }, true],
+                        ['<button>TIDAK</button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        }],
+                    ],
+                });
+            } else if (e.target.classList.contains('history-checkbox')) {
+                updateDeleteSelectedButtonState();
             }
+        });
+
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.history-checkbox');
+            checkboxes.forEach(checkbox => checkbox.checked = e.target.checked);
+            updateDeleteSelectedButtonState();
+        });
+
+        deleteSelectedBtn.addEventListener('click', () => {
+            const checkedBoxes = document.querySelectorAll('.history-checkbox:checked');
+            const indicesToDelete = Array.from(checkedBoxes).map(cb => parseInt(cb.dataset.index));
+
+            iziToast.question({
+                timeout: 20000,
+                close: false,
+                overlay: true,
+                displayMode: 'once',
+                id: 'question',
+                zindex: 9999,
+                title: 'Konfirmasi',
+                message: `Apakah Anda yakin ingin menghapus ${indicesToDelete.length} riwayat terpilih?`,
+                position: 'center',
+                buttons: [
+                    ['<button><b>YA</b></button>', function (instance, toast) {
+                        instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        let history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
+                        const newHistory = history.filter((_, index) => !indicesToDelete.includes(index));
+                        localStorage.setItem('pdfHistory', JSON.stringify(newHistory));
+                        displayHistoryPage();
+                        iziToast.success({ title: 'Berhasil', message: 'Riwayat terpilih telah dihapus.', position: 'topRight' });
+                    }, true],
+                    ['<button>TIDAK</button>', function (instance, toast) {
+                        instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                    }],
+                ],
+            });
         });
 
     </script>
