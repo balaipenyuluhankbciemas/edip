@@ -382,7 +382,7 @@
             pageHeader.classList.add('animate-slide-down');
             pageFooter.classList.add('animate-slide-up');
 
-            const storedUserData = sessionStorage.getItem('userData');
+            const storedUserData = localStorage.getItem('userData');
             if (storedUserData) {
                 handleLoginState(JSON.parse(storedUserData));
             } else {
@@ -511,7 +511,7 @@
             
             // User and Wilayah Info
             doc.setFontSize(10);
-            const userInfo = `${userData.namaLengkap} | Desa ${userData.desa}, Kec. ${userData.kecamatan}, Kab. ${userData.kabupaten}`;
+            const userInfo = `Desa ${userData.desa}, Kec. ${userData.kecamatan}, Kab. ${userData.kabupaten}`;
             doc.text(userInfo, 105, 30, { align: 'center' });
 
 
@@ -544,20 +544,20 @@
                 });
 
                 // Save to history with PDF data
-                let history = JSON.parse(sessionStorage.getItem('pdfHistory')) || [];
+                let history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
                 history.unshift({
                     namaKegiatan: namaKegiatan,
                     tanggal: new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }),
                     pdfData: pdfDataUri,
                     fileName: fileName
                 });
-                sessionStorage.setItem('pdfHistory', JSON.stringify(history));
+                localStorage.setItem('pdfHistory', JSON.stringify(history));
 
             }, 500);
         };
 
         const displayHistoryPage = () => {
-            const history = JSON.parse(sessionStorage.getItem('pdfHistory')) || [];
+            const history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
             const totalItems = historyPage * ITEMS_PER_PAGE;
             const itemsToDisplay = history.slice(0, totalItems);
             
@@ -626,14 +626,14 @@
                     desa: desaSelect.value
                 };
 
-                sessionStorage.setItem('userData', JSON.stringify(currentUserData));
+                localStorage.setItem('userData', JSON.stringify(currentUserData));
                 handleLoginState(currentUserData);
             }, 500);
         });
 
         logoutBtn.addEventListener('click', () => {
-            sessionStorage.removeItem('userData');
-            sessionStorage.removeItem('pdfHistory');
+            localStorage.removeItem('userData');
+            localStorage.removeItem('pdfHistory');
             iziToast.info({
                 title: 'Logout',
                 message: 'Anda telah berhasil logout.',
@@ -671,7 +671,7 @@
         historyTableBody.addEventListener('click', (e) => {
             if (e.target.classList.contains('download-btn')) {
                 const index = e.target.dataset.index;
-                const history = JSON.parse(sessionStorage.getItem('pdfHistory')) || [];
+                const history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
                 const item = history[index];
 
                 if (item && item.pdfData) {
