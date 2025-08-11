@@ -1,394 +1,154 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Gambar & Cetak PDF</title>
-    
+    <title>EDIP | Beranda</title>
+    <!-- Impor Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Impor Font Inter dari Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Shortcut Icon -->
     <link rel="shortcut icon" href="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png">
-
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- jsPDF library for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- Cropper.js for image cropping -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
-
-    <!-- Import iziToast untuk notifikasi -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
-
     <style>
-        /* Custom styles for a better look and feel */
+        /* Terapkan font Inter ke seluruh halaman */
         body {
             font-family: 'Inter', sans-serif;
-            padding-top: 80px; /* Add padding to the top to prevent header overlap */
-            padding-bottom: 80px; /* Add padding to the bottom to prevent footer overlap */
         }
-        .preview-container {
-            width: 100%;
-            height: 300px; /* Fixed height for the container */
-            background-color: #f0f4f8;
-            border: 2px dashed #cbd5e1;
+
+        /* ===== CSS untuk Efek Ripple ===== */
+        .ripple-effect {
+            position: relative;
             overflow: hidden;
-            border-radius: 0.5rem;
-        }
-        /* This rule is important for cropper.js to display correctly */
-        .preview-container img {
-            max-width: 100%;
-            max-height: 100%;
-        }
-        .upload-label {
-            cursor: pointer;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            background-color: #4f46e5;
-            color: white;
-            transition: background-color 0.3s;
-        }
-        .upload-label:hover {
-            background-color: #4338ca;
-        }
-        .btn-action {
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: bold;
-            color: white;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-        .btn-action:hover {
-            transform: scale(1.05);
-        }
-        .btn-generate {
-            background-color: #16a34a;
-        }
-        .btn-generate:hover {
-            background-color: #15803d;
-        }
-        .btn-generate:disabled {
-            background-color: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-confirm {
-            background-color: #2563eb;
-        }
-        .btn-confirm:hover {
-             background-color: #1d4ed8;
-        }
-        .btn-cancel {
-            background-color: #6b7280;
-        }
-        .btn-cancel:hover {
-            background-color: #4b5563;
         }
 
-        /* Animation Keyframes */
-        @keyframes slideDown {
-            from { transform: translateY(-100%); }
-            to { transform: translateY(0); }
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 600ms linear;
         }
 
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-
-        /* Animation Classes */
-        .animate-slide-down {
-            animation: slideDown 0.7s ease-out forwards;
-        }
-
-        .animate-slide-up {
-            animation: slideUp 0.7s ease-out forwards;
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+<body class="bg-gray-100 text-gray-800">
 
-    <!-- Header -->
-    <header id="pageHeader" class="bg-white shadow-md w-full fixed top-0 left-0 right-0 z-50" style="transform: translateY(-100%);">
-        <div class="container mx-auto p-4">
-            <a href="https://balaipenyuluhankbciemas.github.io/edip/" title="Kembali ke Menu" class="flex items-center gap-2 text-gray-700 hover:text-indigo-600 transition-colors w-fit">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span class="font-semibold">Kembali ke Menu</span>
-            </a>
+    <!-- ===== HEADER ===== -->
+    <!-- Header dibuat fixed, hanya dengan logo -->
+    <header class="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
+        <div class="container mx-auto px-6 py-4 flex items-center">
+            <!-- Logo Website -->
+            <div>
+                <img src="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png" alt="Logo BKKBN" class="h-10 w-auto">
+            </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow">
-        <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-5xl">
-            <div class="bg-white p-8 rounded-2xl shadow-lg">
-                
-                <!-- Page Title -->
-                <div class="text-center mb-6">
-                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Dokumentasi Kegiatan</h1>
-                    <p class="text-gray-600 mt-2">Unggah 2 gambar, sesuaikan ukurannya, dan cetak sebagai PDF.</p>
-                </div>
+    <!-- ===== KONTEN UTAMA ===== -->
+    <!-- Diberi padding atas (pt) dan bawah (pb) agar tidak tertutup header/footer -->
+    <main class="container mx-auto px-6 pt-24 pb-20">
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+            <h1 class="text-4xl font-bold mb-4">Selamat Datang di Halaman EDIP</h1>
+            <p class="text-gray-600 mb-8">Ini adalah area konten utama. Pilih salah satu menu di bawah untuk melanjutkan.</p>
 
-                <!-- Nama Kegiatan Input -->
-                <div class="mb-8 max-w-xl mx-auto">
-                    <label for="namaKegiatan" class="block text-sm font-medium text-gray-700 mb-2">Nama Kegiatan</label>
-                    <input type="text" id="namaKegiatan" name="namaKegiatan" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm transition-colors duration-300 focus:ring-2" placeholder="Contoh: Rapat Bulanan Tim Marketing">
-                </div>
+            <!-- ===== BAGIAN CARD VIEW ===== -->
+            <div class="flex flex-wrap justify-center gap-6">
 
-                <!-- Image Upload and Crop Section -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Image 1 -->
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-semibold text-center">Gambar 1</h2>
-                        <div id="previewContainer1" class="preview-container">
-                            <img id="image1">
-                        </div>
-                        <div class="text-center">
-                            <label for="imageUpload1" class="upload-label">Pilih Gambar 1</label>
-                            <input type="file" id="imageUpload1" class="hidden" accept="image/*">
-                        </div>
+                <!-- Card 1: LAPORAN MDK -->
+                <a href="https://balaipenyuluhankbciemas.github.io/edip/mdkv1.html" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 mb-4 mx-auto">
+                        <!-- Ikon Profil (bisa diganti jika perlu) -->
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">LAPORAN MDK</h2>
+                    <p class="text-gray-600">Mutasi Data Kependudukan</p>
+                </a>
 
-                    <!-- Image 2 -->
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-semibold text-center">Gambar 2</h2>
-                        <div id="previewContainer2" class="preview-container">
-                            <img id="image2">
-                        </div>
-                         <div class="text-center">
-                            <label for="imageUpload2" class="upload-label">Pilih Gambar 2</label>
-                            <input type="file" id="imageUpload2" class="hidden" accept="image/*">
-                        </div>
+                <!-- Card 2: DATA MBG -->
+                <a href="https://balaipenyuluhankbciemas.github.io/edip/mbgv2.html" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-green-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 mb-4 mx-auto">
+                        <!-- Ikon Laporan -->
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
-                </div>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">DATA POSYANDU</h2>
+                    <p class="text-gray-600">Pos Pelayanan Terpadu</p>
+                </a>
 
-                <!-- Action Button -->
-                <div class="mt-10 text-center">
-                    <button id="previewBtn" class="w-full md:w-auto px-8 py-4 text-lg btn-action btn-generate" disabled>
-                        Buat PDF
-                    </button>
-                    <p id="infoText" class="text-sm text-gray-500 mt-3">Silakan unggah 2 gambar untuk membuat PDF.</p>
-                </div>
+                <!-- Card 3: DOK KEGIATAN -->
+                <a href="https://balaipenyuluhankbciemas.github.io/edip/dokkegiatan.html" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-green-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 mb-4 mx-auto">
+                        <!-- Ikon Dokumentasi -->
+                        <!-- Ikon dengan warna merah -->
+                        <svg class="w-6 h-6" fill="none" stroke="red" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">DOKUMENTASI</h2>
+                    <p class="text-gray-600">Dokumentasi Kegiatan</p>
+                </a>
+
             </div>
+            
         </div>
     </main>
-    
-    <!-- Footer -->
-    <footer id="pageFooter" class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white z-50" style="transform: translateY(100%);">
+
+    <!-- ===== FOOTER ===== -->
+    <!-- Footer dibuat fixed, selalu di bawah dengan z-index tinggi -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white z-50">
         <div class="container mx-auto px-6 py-4 text-center">
             <p>&copy; 2025 Smysnie - Edip.</p>
         </div>
     </footer>
 
-    <!-- Modal for Preview and Loader -->
-    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-        <div id="modalContent" class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-3xl">
-            <!-- Preview Section -->
-            <div id="previewSection">
-                <h3 class="text-2xl font-bold mb-6 text-center text-gray-800">Pratinjau PDF</h3>
-                <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
-                    <img id="previewImg1" class="hidden max-w-full sm:max-w-xs border-4 border-gray-200 rounded-lg shadow-md">
-                    <img id="previewImg2" class="hidden max-w-full sm:max-w-xs border-4 border-gray-200 rounded-lg shadow-md">
-                </div>
-                <div class="flex justify-center gap-4">
-                    <button id="confirmPdfBtn" class="btn-action btn-confirm">Konfirmasi & Buat PDF</button>
-                    <button id="cancelPdfBtn" class="btn-action btn-cancel">Batal</button>
-                </div>
-            </div>
-            <!-- Loader Section -->
-            <div id="loaderSection" class="hidden text-center">
-                <svg class="animate-spin h-16 w-16 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="mt-4 text-lg font-semibold text-gray-700">Membuat PDF, mohon tunggu...</p>
-            </div>
-        </div>
-    </div>
-
+    <!-- ===== JavaScript untuk Efek Ripple ===== -->
     <script>
-        // Ensure jsPDF is available globally
-        const { jsPDF } = window.jspdf;
+        document.addEventListener('DOMContentLoaded', function () {
+            const rippleElements = document.querySelectorAll('.ripple-effect');
 
-        // Cropper instances
-        let cropper1 = null;
-        let cropper2 = null;
+            rippleElements.forEach(element => {
+                element.addEventListener('click', function (e) {
+                    // Dapatkan posisi klik relatif terhadap viewport
+                    const clientX = e.clientX;
+                    const clientY = e.clientY;
 
-        // DOM Elements
-        const pageHeader = document.getElementById('pageHeader');
-        const pageFooter = document.getElementById('pageFooter');
-        const imageUpload1 = document.getElementById('imageUpload1');
-        const imageUpload2 = document.getElementById('imageUpload2');
-        const image1 = document.getElementById('image1');
-        const image2 = document.getElementById('image2');
-        const namaKegiatanInput = document.getElementById('namaKegiatan');
-        const previewBtn = document.getElementById('previewBtn');
-        const infoText = document.getElementById('infoText');
-        
-        // Modal Elements
-        const modal = document.getElementById('modal');
-        const previewSection = document.getElementById('previewSection');
-        const loaderSection = document.getElementById('loaderSection');
-        const previewImg1 = document.getElementById('previewImg1');
-        const previewImg2 = document.getElementById('previewImg2');
-        const confirmPdfBtn = document.getElementById('confirmPdfBtn');
-        const cancelPdfBtn = document.getElementById('cancelPdfBtn');
+                    // Dapatkan posisi dan ukuran elemen
+                    const rect = this.getBoundingClientRect();
+                    const x = clientX - rect.left;
+                    const y = clientY - rect.top;
 
-        // Trigger animations on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            pageHeader.classList.add('animate-slide-down');
-            pageFooter.classList.add('animate-slide-up');
+                    // Buat elemen span untuk ripple
+                    const ripple = document.createElement('span');
+                    ripple.classList.add('ripple');
+                    ripple.style.left = `${x}px`;
+                    ripple.style.top = `${y}px`;
+
+                    // Hapus ripple yang mungkin sudah ada
+                    const existingRipple = this.querySelector('.ripple');
+                    if (existingRipple) {
+                        existingRipple.remove();
+                    }
+
+                    // Tambahkan ripple ke elemen
+                    this.appendChild(ripple);
+
+                    // Hapus ripple setelah animasi selesai
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
         });
-
-        // Function to validate the "Nama Kegiatan" input
-        const validateNamaKegiatan = () => {
-            const value = namaKegiatanInput.value.trim();
-            namaKegiatanInput.classList.remove('border-gray-300', 'border-red-500', 'border-green-500', 'focus:ring-indigo-500', 'focus:ring-red-500', 'focus:ring-green-500');
-
-            if (value === '') {
-                namaKegiatanInput.classList.add('border-red-500', 'focus:ring-red-500');
-                return false;
-            } else {
-                namaKegiatanInput.classList.add('border-green-500', 'focus:ring-green-500');
-                return true;
-            }
-        };
-
-        // Function to handle image upload and initialize cropper
-        const setupCropper = (inputElement, imageElement, cropperVarName) => {
-            inputElement.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    imageElement.src = event.target.result;
-
-                    if (cropperVarName === 'cropper1' && cropper1) cropper1.destroy();
-                    if (cropperVarName === 'cropper2' && cropper2) cropper2.destroy();
-
-                    const cropper = new Cropper(imageElement, {
-                        aspectRatio: 4 / 3,
-                        viewMode: 1,
-                        background: false,
-                        autoCropArea: 0.9,
-                        responsive: true,
-                        ready: updateButtonState,
-                    });
-
-                    if (cropperVarName === 'cropper1') cropper1 = cropper;
-                    else cropper2 = cropper;
-                };
-                reader.readAsDataURL(file);
-            });
-        };
-
-        setupCropper(imageUpload1, image1, 'cropper1');
-        setupCropper(imageUpload2, image2, 'cropper2');
-
-        // Function to update the generate button's state
-        const updateButtonState = () => {
-            // Enable button only when BOTH images are uploaded
-            if (cropper1 && cropper2) {
-                previewBtn.disabled = false;
-                infoText.style.display = 'none';
-            } else {
-                previewBtn.disabled = true;
-                infoText.style.display = 'block';
-            }
-        };
-
-        // Function to show the preview modal
-        const showPreview = () => {
-            const isKegiatanValid = validateNamaKegiatan();
-            if (!isKegiatanValid) {
-                iziToast.error({
-                    title: 'Gagal',
-                    message: 'Nama kegiatan tidak boleh kosong.',
-                    position: 'topRight'
-                });
-                return;
-            }
-
-            // Add check for both images
-            if (!cropper1 || !cropper2) {
-                 iziToast.error({
-                    title: 'Gagal',
-                    message: 'Harap unggah 2 gambar untuk melanjutkan.',
-                    position: 'topRight'
-                });
-                return;
-            }
-
-            previewImg1.src = cropper1.getCroppedCanvas().toDataURL();
-            previewImg1.classList.remove('hidden');
-            
-            previewImg2.src = cropper2.getCroppedCanvas().toDataURL();
-            previewImg2.classList.remove('hidden');
-
-            loaderSection.classList.add('hidden');
-            previewSection.classList.remove('hidden');
-            modal.classList.remove('hidden');
-        };
-        
-        // Function to generate the PDF
-        const generatePdf = async () => {
-            previewSection.classList.add('hidden');
-            loaderSection.classList.remove('hidden');
-
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
-            
-            const namaKegiatan = namaKegiatanInput.value;
-
-            doc.setFontSize(20);
-            doc.setFont('helvetica', 'bold');
-            doc.text('DOKUMENTASI KEGIATAN', 105, 25, { align: 'center' });
-            
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'normal');
-            doc.text(namaKegiatan, 105, 33, { align: 'center' });
-
-            const imgWidth = 180;
-            const imgHeight = 135;
-            const x = (210 - imgWidth) / 2;
-            let y = 45;
-
-            // Add first image
-            const canvas1 = cropper1.getCroppedCanvas({ width: 1200, height: 900 });
-            doc.addImage(canvas1.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
-            y += imgHeight + 10;
-
-            // Add second image
-            const canvas2 = cropper2.getCroppedCanvas({ width: 1200, height: 900 });
-            doc.addImage(canvas2.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
-            
-            setTimeout(() => {
-                const fileName = `Dokumentasi - ${namaKegiatan.replace(/ /g, '_')}.pdf`;
-                doc.save(fileName);
-                modal.classList.add('hidden');
-
-                iziToast.success({
-                    title: 'Berhasil',
-                    message: `PDF "${fileName}" telah dibuat.`,
-                    position: 'topRight'
-                });
-            }, 500);
-        };
-
-        // Event Listeners
-        namaKegiatanInput.addEventListener('input', validateNamaKegiatan);
-        previewBtn.addEventListener('click', showPreview);
-        confirmPdfBtn.addEventListener('click', generatePdf);
-        cancelPdfBtn.addEventListener('click', () => modal.classList.add('hidden'));
-
     </script>
+
 </body>
 </html>
