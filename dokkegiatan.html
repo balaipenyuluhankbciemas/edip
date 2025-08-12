@@ -516,7 +516,19 @@
                     const canvas = imgData.cropper.getCroppedCanvas({ width: 1200, height: 800 });
                     doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
                 });
-            } else {
+            } else if (activeImages.length === 3) {
+                imgWidth = 110; // 11 cm
+                imgHeight = 60; // 6 cm
+                let y = 40;
+                const x = (210 - imgWidth) / 2;
+                activeImages.forEach((imgData, index) => {
+                    if (index > 0) y += imgHeight + 15;
+                    doc.setFontSize(9);
+                    doc.text(imgData.visualName, x, y - 2);
+                    const canvas = imgData.cropper.getCroppedCanvas({ width: 1200, height: 720 });
+                    doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
+                });
+            } else { // For 4 to 6 images
                 imgWidth = 80; // 8 cm
                 imgHeight = 50; // 5 cm
                 let y = 40;
