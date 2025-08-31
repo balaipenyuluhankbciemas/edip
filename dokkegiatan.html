@@ -149,9 +149,13 @@
                 </div>
 
                 <!-- Action Button -->
-                <div class="mt-10 text-center">
-                    <button id="previewBtn" class="w-full md:w-auto px-8 py-4 text-lg btn-action btn-generate" disabled>
-                        Buat PDF
+                <div class="mt-10 flex flex-col items-center">
+                    <button id="previewBtn" class="w-full md:w-auto px-8 py-4 text-lg btn-action btn-generate flex items-center justify-center" disabled>
+                        <span id="previewBtnText">Buat PDF</span>
+                        <svg id="previewBtnLoader" class="animate-spin h-5 w-5 text-white hidden ml-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                     </button>
                     <p id="infoText" class="text-sm text-gray-500 mt-3">Silakan unggah minimal 2 gambar untuk membuat PDF.</p>
                 </div>
@@ -221,7 +225,7 @@
 
     <!-- History Modal -->
     <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl space-y-6">
+        <div class="relative bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl space-y-6">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-4">
                     <h2 class="text-2xl font-bold text-gray-900">Riwayat Pembuatan PDF</h2>
@@ -255,6 +259,13 @@
                     </svg>
                 </button>
             </div>
+            <!-- History Action Loader -->
+            <div id="historyActionLoader" class="hidden absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-2xl">
+                <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
         </div>
     </div>
 
@@ -269,7 +280,13 @@
                     <!-- Preview images will be inserted here -->
                 </div>
                 <div class="flex justify-center gap-4">
-                    <button id="confirmPdfBtn" class="btn-action btn-confirm">Konfirmasi & Buat PDF</button>
+                    <button id="confirmPdfBtn" class="btn-action btn-confirm flex items-center justify-center">
+                        <span id="confirmBtnText">Konfirmasi & Buat PDF</span>
+                        <svg id="confirmBtnLoader" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
                     <button id="cancelPdfBtn" class="btn-action btn-cancel">Batal</button>
                 </div>
             </div>
@@ -305,6 +322,8 @@
         const imageGrid = document.querySelector('.grid.grid-cols-1');
         const namaKegiatanInput = document.getElementById('namaKegiatan');
         const previewBtn = document.getElementById('previewBtn');
+        const previewBtnText = document.getElementById('previewBtnText');
+        const previewBtnLoader = document.getElementById('previewBtnLoader');
         const infoText = document.getElementById('infoText');
         
         // Wilayah Modal Elements
@@ -332,6 +351,7 @@
         const loadMoreLoader = document.getElementById('loadMoreLoader');
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const historyActionLoader = document.getElementById('historyActionLoader');
 
         // Main Modal Elements
         const modal = document.getElementById('modal');
@@ -339,6 +359,8 @@
         const previewImageContainer = document.getElementById('previewImageContainer');
         const loaderSection = document.getElementById('loaderSection');
         const confirmPdfBtn = document.getElementById('confirmPdfBtn');
+        const confirmBtnText = document.getElementById('confirmBtnText');
+        const confirmBtnLoader = document.getElementById('confirmBtnLoader');
         const cancelPdfBtn = document.getElementById('cancelPdfBtn');
 
         const handleLoginState = (data) => {
@@ -411,13 +433,23 @@
 
         // Function to handle image upload and initialize cropper
         const setupCropper = (inputElement, imageElement, index) => {
+            const previewContainer = document.getElementById(`previewContainer${index + 1}`);
+
             inputElement.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
 
+                // Create and show loader
+                const loader = document.createElement('div');
+                loader.className = 'absolute inset-0 bg-gray-100 bg-opacity-75 flex items-center justify-center rounded-lg';
+                loader.innerHTML = `<svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                previewContainer.style.position = 'relative'; // Ensure parent is relative
+                previewContainer.appendChild(loader);
+
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     imageElement.src = event.target.result;
+                    
                     if (croppers[index]) croppers[index].destroy();
 
                     croppers[index] = new Cropper(imageElement, {
@@ -426,7 +458,13 @@
                         background: false,
                         autoCropArea: 0.9,
                         responsive: true,
-                        ready: updateButtonState,
+                        ready: () => {
+                            // Hide loader when cropper is ready
+                            if (previewContainer.contains(loader)) {
+                                previewContainer.removeChild(loader);
+                            }
+                            updateButtonState();
+                        },
                     });
                 };
                 reader.readAsDataURL(file);
@@ -445,16 +483,24 @@
             }
         };
 
+        const resetPreviewButton = () => {
+            previewBtn.disabled = false;
+            previewBtnText.classList.remove('hidden');
+            previewBtnLoader.classList.add('hidden');
+        };
+
         // Function to show the preview modal
         const showPreview = () => {
             if (!validateNamaKegiatan()) {
                 iziToast.error({ title: 'Gagal', message: 'Nama kegiatan tidak boleh kosong.', position: 'topRight' });
+                resetPreviewButton();
                 return;
             }
 
             const activeCroppers = croppers.filter(c => c);
             if (activeCroppers.length < 2) {
                  iziToast.error({ title: 'Gagal', message: 'Harap unggah minimal 2 gambar.', position: 'topRight' });
+                 resetPreviewButton();
                 return;
             }
             
@@ -469,6 +515,14 @@
             loaderSection.classList.add('hidden');
             previewSection.classList.remove('hidden');
             modal.classList.remove('hidden');
+            resetPreviewButton();
+        };
+        
+        const resetConfirmModal = () => {
+            confirmPdfBtn.disabled = false;
+            confirmBtnText.classList.remove('hidden');
+            confirmBtnLoader.classList.add('hidden');
+            cancelPdfBtn.disabled = false;
         };
         
         // Function to generate the PDF
@@ -550,6 +604,7 @@
                 const fileName = `Dokumentasi - ${namaKegiatan.replace(/ /g, '_')}.pdf`;
                 doc.save(fileName);
                 modal.classList.add('hidden');
+                resetConfirmModal(); // Reset button state after modal is hidden
                 iziToast.success({ title: 'Berhasil', message: `PDF "${fileName}" telah dibuat.`, position: 'topRight' });
                 let history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
                 history.unshift({
@@ -611,9 +666,34 @@
 
         // Event Listeners
         namaKegiatanInput.addEventListener('input', validateNamaKegiatan);
-        previewBtn.addEventListener('click', showPreview);
-        confirmPdfBtn.addEventListener('click', generatePdf);
-        cancelPdfBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        
+        previewBtn.addEventListener('click', () => {
+            previewBtn.disabled = true;
+            previewBtnText.classList.add('hidden');
+            previewBtnLoader.classList.remove('hidden');
+
+            // Give UI time to update before heavy processing
+            setTimeout(() => {
+                showPreview();
+            }, 100);
+        });
+        
+        confirmPdfBtn.addEventListener('click', () => {
+            confirmPdfBtn.disabled = true;
+            confirmBtnText.classList.add('hidden');
+            confirmBtnLoader.classList.remove('hidden');
+            cancelPdfBtn.disabled = true;
+
+            // Give UI time to update before heavy processing
+            setTimeout(() => {
+                generatePdf();
+            }, 100);
+        });
+
+        cancelPdfBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            resetConfirmModal();
+        });
         
         namaLengkapInput.addEventListener('input', validateNamaLengkap);
         desaSelect.addEventListener('change', validateDesa);
@@ -718,10 +798,14 @@
                     buttons: [
                         ['<button><b>YA</b></button>', function (instance, toast) {
                             instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                            history.splice(index, 1);
-                            localStorage.setItem('pdfHistory', JSON.stringify(history));
-                            displayHistoryPage();
-                            iziToast.success({ title: 'Berhasil', message: 'Riwayat telah dihapus.', position: 'topRight' });
+                            historyActionLoader.classList.remove('hidden');
+                            setTimeout(() => {
+                                history.splice(index, 1);
+                                localStorage.setItem('pdfHistory', JSON.stringify(history));
+                                displayHistoryPage();
+                                historyActionLoader.classList.add('hidden');
+                                iziToast.success({ title: 'Berhasil', message: 'Riwayat telah dihapus.', position: 'topRight' });
+                            }, 500);
                         }, true],
                         ['<button>TIDAK</button>', function (instance, toast) {
                             instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
@@ -756,11 +840,15 @@
                 buttons: [
                     ['<button><b>YA</b></button>', function (instance, toast) {
                         instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
-                        let history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
-                        const newHistory = history.filter((_, index) => !indicesToDelete.includes(index));
-                        localStorage.setItem('pdfHistory', JSON.stringify(newHistory));
-                        displayHistoryPage();
-                        iziToast.success({ title: 'Berhasil', message: 'Riwayat terpilih telah dihapus.', position: 'topRight' });
+                        historyActionLoader.classList.remove('hidden');
+                        setTimeout(() => {
+                            let history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
+                            const newHistory = history.filter((_, index) => !indicesToDelete.includes(index));
+                            localStorage.setItem('pdfHistory', JSON.stringify(newHistory));
+                            displayHistoryPage();
+                            historyActionLoader.classList.add('hidden');
+                            iziToast.success({ title: 'Berhasil', message: 'Riwayat terpilih telah dihapus.', position: 'topRight' });
+                        }, 500);
                     }, true],
                     ['<button>TIDAK</button>', function (instance, toast) {
                         instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
@@ -772,3 +860,4 @@
     </script>
 </body>
 </html>
+
