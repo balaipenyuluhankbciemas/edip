@@ -115,7 +115,7 @@
         <div class="container mx-auto p-4 flex justify-between items-center">
             <a href="https://balaipenyuluhankbciemas.github.io/edip/" title="Kembali ke Menu" class="flex items-center gap-2 text-gray-700 hover:text-indigo-600 transition-colors w-fit">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 <span class="font-semibold">Kembali ke Menu</span>
             </a>
@@ -134,7 +134,7 @@
                 <!-- Page Title -->
                 <div class="text-center mb-6">
                     <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">DOKUMENTASI KEGIATAN</h1>
-                    <p class="text-gray-600 mt-2">Unggah 2 hingga 6 gambar, sesuaikan ukurannya, dan cetak sebagai PDF.</p>
+                    <p class="text-gray-600 mt-2">Unggah minimal 1 hingga 6 gambar, sesuaikan ukurannya, dan cetak sebagai PDF.</p>
                 </div>
 
                 <!-- Nama Kegiatan Input -->
@@ -157,7 +157,7 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </button>
-                    <p id="infoText" class="text-sm text-gray-500 mt-3">Silakan unggah minimal 2 gambar untuk membuat PDF.</p>
+                    <p id="infoText" class="text-sm text-gray-500 mt-3">Silakan unggah minimal 1 gambar untuk membuat PDF.</p>
                 </div>
             </div>
         </div>
@@ -389,7 +389,7 @@
                     <h2 class="text-xl font-semibold text-center">Gambar ${i}</h2>
                     <div>
                         <label for="visualName${i}" class="block text-sm font-medium text-gray-700">Nama Visual</label>
-                        <input type="text" id="visualName${i}" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm uppercase" oninput="this.value = this.value.toUpperCase()">
+                        <textarea id="visualName${i}" rows="4" cols="50" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm uppercase" oninput="this.value = this.value.toUpperCase()"></textarea>
                     </div>
                     <div id="previewContainer${i}" class="preview-container">
                         <img id="image${i}">
@@ -474,7 +474,7 @@
         // Function to update the generate button's state
         const updateButtonState = () => {
             const activeCroppers = croppers.filter(c => c).length;
-            if (activeCroppers >= 2) {
+            if (activeCroppers >= 1) {
                 previewBtn.disabled = false;
                 infoText.style.display = 'none';
             } else {
@@ -498,8 +498,8 @@
             }
 
             const activeCroppers = croppers.filter(c => c);
-            if (activeCroppers.length < 2) {
-                 iziToast.error({ title: 'Gagal', message: 'Harap unggah minimal 2 gambar.', position: 'topRight' });
+            if (activeCroppers.length < 1) {
+                 iziToast.error({ title: 'Gagal', message: 'Harap unggah minimal 1 gambar.', position: 'topRight' });
                  resetPreviewButton();
                 return;
             }
@@ -558,7 +558,18 @@
             doc.text(userInfo, 105, 30, { align: 'center' });
 
             let imgWidth, imgHeight;
-            if (activeImages.length === 2) {
+            if (activeImages.length === 1) {
+                imgWidth = 150; // 15 cm
+                imgHeight = 100; // 10 cm
+                let y = 40;
+                const x = (210 - imgWidth) / 2;
+                activeImages.forEach((imgData, index) => {
+                    doc.setFontSize(9);
+                    doc.text(imgData.visualName, x, y - 5);
+                    const canvas = imgData.cropper.getCroppedCanvas({ width: 1200, height: 800 });
+                    doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
+                });
+            } else if (activeImages.length === 2) {
                 imgWidth = 150; // 15 cm
                 imgHeight = 100; // 10 cm
                 let y = 40;
@@ -566,7 +577,7 @@
                 activeImages.forEach((imgData, index) => {
                     if (index === 1) y += imgHeight + 15; // Add space
                     doc.setFontSize(9);
-                    doc.text(imgData.visualName, x, y - 2);
+                    doc.text(imgData.visualName, x, y - 5);
                     const canvas = imgData.cropper.getCroppedCanvas({ width: 1200, height: 800 });
                     doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
                 });
@@ -578,7 +589,7 @@
                 activeImages.forEach((imgData, index) => {
                     if (index > 0) y += imgHeight + 15;
                     doc.setFontSize(9);
-                    doc.text(imgData.visualName, x, y - 2);
+                    doc.text(imgData.visualName, x, y - 5);
                     const canvas = imgData.cropper.getCroppedCanvas({ width: 1200, height: 720 });
                     doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
                 });
@@ -593,7 +604,7 @@
                     if (index > 0 && index % 2 === 0) y += imgHeight + 15;
                     
                     doc.setFontSize(9);
-                    doc.text(imgData.visualName, x, y - 2);
+                    doc.text(imgData.visualName, x, y - 5);
                     const canvas = imgData.cropper.getCroppedCanvas({ width: 1200, height: 750 });
                     doc.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', x, y, imgWidth, imgHeight);
                 });
