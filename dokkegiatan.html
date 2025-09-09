@@ -449,6 +449,7 @@
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     imageElement.src = event.target.result;
+                    imageElement.dataset.originalSrc = event.target.result; // Store original image data
                     
                     if (croppers[index]) croppers[index].destroy();
 
@@ -470,6 +471,31 @@
                 reader.readAsDataURL(file);
             });
         };
+
+        // Function to reset the entire form for editing
+        const resetForm = () => {
+            namaKegiatanInput.value = '';
+            for (let i = 0; i < MAX_IMAGES; i++) {
+                if (croppers[i]) {
+                    croppers[i].destroy();
+                }
+                const imageElement = document.getElementById(`image${i + 1}`);
+                const inputElement = document.getElementById(`imageUpload${i + 1}`);
+                const visualNameElement = document.getElementById(`visualName${i + 1}`);
+                
+                imageElement.src = '';
+                croppers[i] = undefined; 
+                
+                if (imageElement.dataset.originalSrc) {
+                     delete imageElement.dataset.originalSrc;
+                }
+               
+                inputElement.value = ''; 
+                visualNameElement.value = '';
+            }
+            updateButtonState();
+        };
+
 
         // Function to update the generate button's state
         const updateButtonState = () => {
@@ -532,15 +558,32 @@
 
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
             const namaKegiatan = namaKegiatanInput.value;
+            
+            const historyEntry = {
+                namaKegiatan: namaKegiatan,
+                images: [],
+                tanggal: new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+            };
+
             const activeImages = croppers.map((cropper, index) => {
                 if (cropper) {
+                    const imageElement = document.getElementById(`image${index + 1}`);
                     return {
                         cropper: cropper,
-                        visualName: document.getElementById(`visualName${index + 1}`).value || `Gambar ${index + 1}`
+                        visualName: document.getElementById(`visualName${index + 1}`).value || `Gambar ${index + 1}`,
+                        originalSrc: imageElement.dataset.originalSrc,
+                        cropData: cropper.getData()
                     };
                 }
                 return null;
             }).filter(Boolean);
+
+            historyEntry.images = activeImages.map(d => ({
+                visualName: d.visualName,
+                originalSrc: d.originalSrc,
+                cropData: d.cropData
+            }));
+
 
             // Main Title
             doc.setFontSize(20);
@@ -611,19 +654,18 @@
             }
             
             const pdfDataUri = doc.output('datauristring');
+            const fileName = `Dokumentasi - ${namaKegiatan.replace(/ /g, '_')}.pdf`;
+            
+            historyEntry.pdfData = pdfDataUri;
+            historyEntry.fileName = fileName;
+
             setTimeout(() => {
-                const fileName = `Dokumentasi - ${namaKegiatan.replace(/ /g, '_')}.pdf`;
                 doc.save(fileName);
                 modal.classList.add('hidden');
-                resetConfirmModal(); // Reset button state after modal is hidden
+                resetConfirmModal(); 
                 iziToast.success({ title: 'Berhasil', message: `PDF "${fileName}" telah dibuat.`, position: 'topRight' });
                 let history = JSON.parse(localStorage.getItem('pdfHistory')) || [];
-                history.unshift({
-                    namaKegiatan: namaKegiatan,
-                    tanggal: new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }),
-                    pdfData: pdfDataUri,
-                    fileName: fileName
-                });
+                history.unshift(historyEntry);
                 localStorage.setItem('pdfHistory', JSON.stringify(history));
             }, 500);
         };
@@ -650,6 +692,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.namaKegiatan}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.tanggal}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-x-2">
+                            <button class="edit-btn text-green-600 hover:text-green-800" data-index="${index}">Edit</button>
                             <button class="download-btn text-blue-600 hover:text-blue-800" data-index="${index}">Unduh</button>
                             <button class="delete-btn text-red-600 hover:text-red-800" data-index="${index}">Hapus</button>
                         </td>
@@ -795,6 +838,62 @@
                 } else {
                     iziToast.error({ title: 'Gagal', message: 'Data PDF tidak ditemukan.', position: 'topRight' });
                 }
+            } else if (e.target.classList.contains('edit-btn')) {
+                const item = history[index];
+                if (!item || !item.images || item.images.length === 0) {
+                    iziToast.error({ title: 'Gagal', message: 'Data riwayat ini tidak lengkap dan tidak dapat diedit.', position: 'topRight' });
+                    return;
+                }
+
+                iziToast.question({
+                    timeout: 20000,
+                    close: false,
+                    overlay: true,
+                    displayMode: 'once',
+                    id: 'question',
+                    zindex: 9999,
+                    title: 'Konfirmasi Edit',
+                    message: 'Ini akan mengganti data saat ini di form. Lanjutkan?',
+                    position: 'center',
+                    buttons: [
+                        ['<button><b>YA</b></button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                            resetForm();
+                            namaKegiatanInput.value = item.namaKegiatan;
+
+                            item.images.forEach((imgData, i) => {
+                                const imageElement = document.getElementById(`image${i + 1}`);
+                                const visualNameElement = document.getElementById(`visualName${i + 1}`);
+
+                                visualNameElement.value = imgData.visualName;
+                                imageElement.dataset.originalSrc = imgData.originalSrc;
+                                imageElement.src = imgData.originalSrc;
+
+                                if (croppers[i]) {
+                                    croppers[i].destroy();
+                                }
+
+                                croppers[i] = new Cropper(imageElement, {
+                                    aspectRatio: 4 / 3,
+                                    viewMode: 1,
+                                    background: false,
+                                    autoCropArea: 0.9,
+                                    responsive: true,
+                                    ready: () => {
+                                        croppers[i].setData(imgData.cropData);
+                                        updateButtonState();
+                                    },
+                                });
+                            });
+
+                            historyModal.classList.add('hidden');
+                            iziToast.info({ title: 'Info', message: 'Data telah dimuat ke form untuk diedit.', position: 'topRight' });
+                        }, true],
+                        ['<button>TIDAK</button>', function (instance, toast) {
+                            instance.hide({ transitionOut: 'fadeOut' }, toast, 'button');
+                        }],
+                    ],
+                });
             } else if (e.target.classList.contains('delete-btn')) {
                 iziToast.question({
                     timeout: 20000,
