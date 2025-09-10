@@ -81,10 +81,10 @@
              background-color: #1d4ed8;
         }
         .btn-cancel {
-            background-color: #6b7280;
+            background-color: #ef4444; /* Red color for cancel */
         }
         .btn-cancel:hover {
-            background-color: #4b5563;
+            background-color: #dc2626;
         }
 
         /* Animation Keyframes */
@@ -175,7 +175,7 @@
 
                 <!-- Action Controls -->
                 <div class="mt-10 flex flex-col items-center gap-4">
-                     <!-- Crop Lock Toggle -->
+                      <!-- Crop Lock Toggle -->
                     <div class="flex items-center justify-center">
                         <label for="cropLockToggle" class="flex items-center cursor-pointer">
                             <div class="relative">
@@ -333,7 +333,7 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </button>
-                    <button id="cancelPdfBtn" class="btn-action btn-cancel">Batal</button>
+                    <button id="cancelPdfBtn" class="btn-action bg-gray-600 hover:bg-gray-700">Batal</button>
                 </div>
             </div>
             <!-- Loader Section -->
@@ -441,13 +441,23 @@
                     <div id="previewContainer${i}" class="preview-container">
                         <img id="image${i}">
                     </div>
-                    <div class="text-center">
-                        <label for="imageUpload${i}" class="upload-label">Pilih Gambar ${i}</label>
+                    <div class="flex justify-center items-center gap-2 mt-2">
+                        <label for="imageUpload${i}" class="upload-label">Pilih Gambar</label>
                         <input type="file" id="imageUpload${i}" class="hidden" accept="image/*">
+                        <button id="cancelBtn${i}" class="hidden btn-action btn-cancel px-3 py-2 text-sm !bg-red-500 hover:!bg-red-600">Batal</button>
                     </div>
                 `;
                 imageGridContainer.appendChild(slot);
-                setupCropper(document.getElementById(`imageUpload${i}`), document.getElementById(`image${i}`), i - 1);
+                
+                const inputElement = document.getElementById(`imageUpload${i}`);
+                const imageElement = document.getElementById(`image${i}`);
+                const cancelBtn = document.getElementById(`cancelBtn${i}`);
+                
+                setupCropper(inputElement, imageElement, i - 1, cancelBtn);
+
+                cancelBtn.addEventListener('click', () => {
+                    resetImageSlot(i - 1);
+                });
             }
 
             // Set initial crop lock state
@@ -484,7 +494,7 @@
         const validateDesa = () => validateField(desaSelect, isNotEmpty);
 
         // Function to handle image upload and initialize cropper
-        const setupCropper = (inputElement, imageElement, index) => {
+        const setupCropper = (inputElement, imageElement, index, cancelBtn) => {
             const previewContainer = document.getElementById(`previewContainer${index + 1}`);
 
             inputElement.addEventListener('change', (e) => {
@@ -505,6 +515,8 @@
                     
                     if (croppers[index]) croppers[index].destroy();
 
+                    cancelBtn.classList.remove('hidden');
+
                     croppers[index] = new Cropper(imageElement, {
                         aspectRatio: 4 / 3,
                         viewMode: 1,
@@ -524,6 +536,30 @@
                 reader.readAsDataURL(file);
             });
         };
+        
+        // Function to reset a single image slot
+        const resetImageSlot = (index) => {
+            if (croppers[index]) {
+                croppers[index].destroy();
+            }
+            croppers[index] = undefined;
+
+            const imageElement = document.getElementById(`image${index + 1}`);
+            const inputElement = document.getElementById(`imageUpload${index + 1}`);
+            const visualNameElement = document.getElementById(`visualName${index + 1}`);
+            const cancelBtn = document.getElementById(`cancelBtn${index + 1}`);
+
+            imageElement.src = '';
+            if (imageElement.dataset.originalSrc) {
+                delete imageElement.dataset.originalSrc;
+            }
+            inputElement.value = '';
+            visualNameElement.value = '';
+            cancelBtn.classList.add('hidden');
+            
+            updateButtonState();
+            iziToast.info({ title: 'Info', message: `Gambar ${index + 1} telah dibatalkan.`, position: 'topRight', timeout: 3000 });
+        };
 
         // Function to reset the entire form for editing
         const resetForm = () => {
@@ -535,16 +571,18 @@
                 const imageElement = document.getElementById(`image${i + 1}`);
                 const inputElement = document.getElementById(`imageUpload${i + 1}`);
                 const visualNameElement = document.getElementById(`visualName${i + 1}`);
+                const cancelBtn = document.getElementById(`cancelBtn${i + 1}`);
                 
                 imageElement.src = '';
                 croppers[i] = undefined; 
                 
                 if (imageElement.dataset.originalSrc) {
-                     delete imageElement.dataset.originalSrc;
+                    delete imageElement.dataset.originalSrc;
                 }
-               
+                
                 inputElement.value = ''; 
                 visualNameElement.value = '';
+                cancelBtn.classList.add('hidden');
             }
             updateButtonState();
         };
@@ -935,10 +973,13 @@
                             item.images.forEach((imgData, i) => {
                                 const imageElement = document.getElementById(`image${i + 1}`);
                                 const visualNameElement = document.getElementById(`visualName${i + 1}`);
+                                const cancelBtn = document.getElementById(`cancelBtn${i + 1}`);
 
                                 visualNameElement.value = imgData.visualName;
                                 imageElement.dataset.originalSrc = imgData.originalSrc;
                                 imageElement.src = imgData.originalSrc;
+                                
+                                cancelBtn.classList.remove('hidden');
 
                                 if (croppers[i]) {
                                     croppers[i].destroy();
@@ -1041,4 +1082,3 @@
     </script>
 </body>
 </html>
-
