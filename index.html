@@ -1,18 +1,19 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EDIP | Beranda</title>
-    <!-- Impor Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Impor Font Inter dari Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Shortcut Icon -->
     <link rel="shortcut icon" href="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" />
+    
     <style>
         /* Terapkan font Inter ke seluruh halaman */
         body {
@@ -43,57 +44,37 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- ===== HEADER ===== -->
-    <!-- Header dibuat fixed, hanya dengan logo -->
     <header class="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
         <div class="container mx-auto px-6 py-4 flex items-center">
-            <!-- Logo Website -->
             <div>
                 <img src="https://newsiga-siga.bkkbn.go.id/icon_bkkbn.png" alt="Logo BKKBN" class="h-10 w-auto">
             </div>
         </div>
     </header>
 
-    <!-- ===== KONTEN UTAMA ===== -->
-    <!-- Diberi padding atas (pt) dan bawah (pb) agar tidak tertutup header/footer -->
     <main class="container mx-auto px-6 pt-24 pb-20">
         <div class="bg-white p-8 rounded-lg shadow-lg text-center">
             <h1 class="text-4xl font-bold mb-4">Selamat Datang di Halaman EDIP</h1>
             <p class="text-gray-600 mb-8">Ini adalah area konten utama. Pilih salah satu menu di bawah untuk melanjutkan.</p>
 
-            <!-- ===== BAGIAN CARD VIEW ===== -->
             <div class="flex flex-wrap justify-center gap-6">
 
-                <!-- Card 1: LAPORAN MDK -->
                 <a href="https://balaipenyuluhankbciemas.github.io/edip/mdkv1.html" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
                     <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 mb-4 mx-auto">
-                        <!-- Ikon Profil (bisa diganti jika perlu) -->
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                     <h2 class="text-xl font-semibold text-gray-800 mb-2">LAPORAN MDK</h2>
                     <p class="text-gray-600">Mutasi Data Kependudukan</p>
                 </a>
 
-                <!-- Card 3: DOK KEGIATAN -->
                 <a href="https://silaksa.my.id/dodotai/genting/" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-blue-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
                     <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 mb-4 mx-auto">
-                        <!-- Ikon Profil (bisa diganti jika perlu) -->
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                     <h2 class="text-xl font-semibold text-gray-800 mb-2">GENTING</h2>
                     <p class="text-gray-600">GERAKAN ORANG TUA ASUH CEGAH STUNTING (GENTING)</p>
                 </a>
                 
-                <!-- Card 2: DATA MBG 
-                <a href="https://balaipenyuluhankbciemas.github.io/edip/mbgv2.html" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-green-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
-                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 mb-4 mx-auto">
-                        
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2">DATA POSYANDU</h2>
-                    <p class="text-gray-600">Pos Pelayanan Terpadu</p>
-                </a>
--->
                 <a href="https://silaksa.my.id/dodotai/extrak/" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-green-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
                     <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 mb-4 mx-auto">
                         
@@ -103,29 +84,22 @@
                     <p class="text-gray-600">Pos Pelayanan Terpadu</p>
                 </a>
 
-                <!-- Card 3: DODOT AI SCANNER -->
                 <a href="https://daldukwilayahciemas.com/edip/edipScanner/" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-green-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
                     <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 mb-4 mx-auto">
-                        <!-- Ikon Dokumentasi -->
-                        <!-- Ikon dengan warna merah -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="blue" stroke-width="2">
-                          <!-- Corner brackets -->
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 7V5a1 1 0 011-1h2m10 0h2a1 1 0 011 1v2m0 10v2a1 1 0 01-1 1h-2m-10 0H5a1 1 0 01-1-1v-2"/>
-                          <!-- Garis scan -->
-                          <line x1="4" y1="12" x2="20" y2="12" stroke="blue" stroke-width="2" stroke-linecap="round"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7V5a1 1 0 011-1h2m10 0h2a1 1 0 011 1v2m0 10v2a1 1 0 01-1 1h-2m-10 0H5a1 1 0 01-1-1v-2"/>
+                            <line x1="4" y1="12" x2="20" y2="12" stroke="blue" stroke-width="2" stroke-linecap="round"/>
                         </svg>
 
                     </div>
-                    <h2 class="text-xl font-semibold text-gray-800 mb-2">DODOT AI</h2>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-2">EDIP AI</h2>
                     <p class="text-gray-600">Scanner KK dan EKTP</p>
                 </a>
                 
                 <a href="https://balaipenyuluhankbciemas.github.io/edip/dokkegiatan.html" class="ripple-effect block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-lg hover:border-green-400 transition-all duration-300 transform hover:-translate-y-1 text-center w-full sm:w-80">
                     <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-600 mb-4 mx-auto">
-                        <!-- Ikon Dokumentasi -->
-                        <!-- Ikon dengan warna merah -->
                         <svg class="w-6 h-6" fill="none" stroke="red" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
                     <h2 class="text-xl font-semibold text-gray-800 mb-2">DOKUMENTASI</h2>
@@ -137,15 +111,12 @@
         </div>
     </main>
 
-    <!-- ===== FOOTER ===== -->
-    <!-- Footer dibuat fixed, selalu di bawah dengan z-index tinggi -->
     <footer class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white z-50">
         <div class="container mx-auto px-6 py-4 text-center">
             <p>&copy; 2025 Smysnie - Edip.</p>
         </div>
     </footer>
 
-    <!-- ===== JavaScript untuk Efek Ripple ===== -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const rippleElements = document.querySelectorAll('.ripple-effect');
